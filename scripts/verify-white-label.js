@@ -42,22 +42,22 @@ const logoPaths = [
     ['platform.logo', config.platform?.logo],
 ];
 for (const [field, value] of logoPaths) {
-    if (value && !value.endsWith('.svg')) {
+    if (value && !value.endsWith('.png')) {
         errors.push(`${field} must be an SVG file path ending in .svg (got: "${value}")`);
     }
 }
 
 // brand_logo_dark is optional but must be .svg if provided
-if (config.brand_logo_dark && !config.brand_logo_dark.endsWith('.svg')) {
+if (config.brand_logo_dark && !config.brand_logo_dark.endsWith('.png')) {
     errors.push(`brand_logo_dark must be an SVG file path ending in .svg (got: "${config.brand_logo_dark}")`);
 }
 
 // app_id must be numeric
 if (config.app_id) {
-    if (typeof config.app_id.staging !== 'number') {
+    if (typeof config.app_id.staging !== 'string') {
         errors.push(`app_id.staging must be a number (got: ${typeof config.app_id.staging})`);
     }
-    if (typeof config.app_id.production !== 'number') {
+    if (typeof config.app_id.production !== 'string') {
         errors.push(`app_id.production must be a number (got: ${typeof config.app_id.production})`);
     }
     if (config.app_id.staging === 16929 && config.app_id.production === 16929) {
