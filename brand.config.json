@@ -11,12 +11,12 @@
         "name": "PIPLUX TRADING HUB",
         "description": "A whole new trading experience on a powerful yet easy to use platform.",
         "logo": "brand/platform-logo.png",
-        "home_url": "https://home.pipluxtrade.com/dashboard",
+        "home_url": "https://pipluxtrade.com",
         "help_centre_url": "https://trade.deriv.com/help-centre"
     },
     "signup_url": {
-        "production": "https://home.deriv.com/dashboard/signup",
-        "staging": "https://staging-home.deriv.com/dashboard/signup"
+        "production": "https://oauth.deriv.com/oauth2/authorize?app_id=33oOut0fWuGwjsRPBBp38",
+        "staging": "https://oauth.deriv.com/oauth2/authorize?app_id=1089"
     },
     "deposit_url": {
         "staging": "https://staging.pipluxtrade.com//transfer",
@@ -27,7 +27,7 @@
         "production": "https://auth.deriv.com",
         "oauth_scopes": ["trade", "account_manage"],
         "oauth_redirect_uri_staging": "https://staging.pipluxtrade.com",
-        "oauth_redirect_uri_production": "https://pipluxtrade.com/",
+        "oauth_redirect_uri_production": "https://pipluxtrade.com",
         "oauth_app_id": "33oOut0fWuGWjsRPBBp38"
     },
     "derivws": {
