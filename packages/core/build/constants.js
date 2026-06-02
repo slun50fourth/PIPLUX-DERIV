@@ -130,6 +130,7 @@ const plugins = ({ base, is_test_env }) => {
             silent: true, // don't error if .env file is missing (CI won't have one)
         }),
         new DefinePlugin({
+            'process.env.OAUTH_CLIENT_ID': JSON.stringify(process.env.OAUTH_CLIENT_ID),
             'process.env.REF_NAME': JSON.stringify(process.env.REF_NAME),
             'process.env.TRANSLATIONS_CDN_URL': JSON.stringify(process.env.TRANSLATIONS_CDN_URL || ''),
         }),
