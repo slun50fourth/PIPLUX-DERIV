@@ -4,7 +4,7 @@
     "brand_logo_dark": "brand/platform-logo.png",
     "brand_domain": "pipluxtrade.com",
     "brand_hostname": {
-        "staging": "staging.trader.pipluxtrade.com",
+        "staging": "staging.pipluxtrade.com",
         "production": "pipluxtrade.com"
     },
     "platform": {
@@ -19,15 +19,15 @@
         "staging": "https://staging-home.deriv.com/dashboard/signup"
     },
     "deposit_url": {
-        "staging": "https://staging.trader.pipluxtrade.com/transfer",
-        "production": "https://trader.pipluxtrade.com/transfer"
+        "staging": "https://staging.pipluxtrade.com/transfer",
+        "production": "https://pipluxtrade.com/transfer"
     },
     "auth": {
         "staging": "https://staging-auth.deriv.com",
         "production": "https://auth.deriv.com",
         "oauth_scopes": ["trade", "account_manage"],
-        "oauth_redirect_uri_staging": "https://staging.trader.pipluxtrade.com",
-        "oauth_redirect_uri_production": "https://trader.pipluxtrade.com",
+        "oauth_redirect_uri_staging": "https://staging.pipluxtrade.com",
+        "oauth_redirect_uri_production": "https://pipluxtrade.com",
         "oauth_app_id": ""
     },
     "derivws": {
@@ -44,7 +44,7 @@
     },
     "app_id": {
         "staging": "1089",
-        "production": "33oOut0fWuGWjsRPBBp38"
+        "production": ""
     },
     "colors": {
         "primary": "#118e1c",
