@@ -11,23 +11,23 @@
         "name": "PIPLUX TRADING HUB",
         "description": "A whole new trading experience on a powerful yet easy to use platform.",
         "logo": "brand/platform-logo.png",
-        "home_url": "https://pipluxtrade.com",
+        "home_url": "https://home.deriv.com/dashboard",
         "help_centre_url": "https://trade.deriv.com/help-centre"
     },
     "signup_url": {
-        "production": "https://oauth.deriv.com/oauth2/authorize?app_id=33oOut0fWuGwjsRPBBp38",
-        "staging": "https://oauth.deriv.com/oauth2/authorize?app_id=1089"
+        "production": "https://partner-tracking.deriv.com/click?a=19593&o=1&c=3&link_id=1",
+        "staging": "https://staging-home.deriv.com/dashboard/signup"
     },
     "deposit_url": {
-        "staging": "https://staging.pipluxtrade.com//transfer",
-        "production": "https://pipluxtrade.com/transfer"
+        "staging": "https://staging.trader.pipluxtrade.com/transfer",
+        "production": "https://trader.pipluxtrade.com/transfer"
     },
     "auth": {
         "staging": "https://staging-auth.deriv.com",
         "production": "https://auth.deriv.com",
         "oauth_scopes": ["trade", "account_manage"],
-        "oauth_redirect_uri_staging": "https://staging.pipluxtrade.com",
-        "oauth_redirect_uri_production": "https://pipluxtrade.com",
+        "oauth_redirect_uri_staging": "https://staging.trader.pipluxtrade.com",
+        "oauth_redirect_uri_production": "https://trader.pipluxtrade.com",
         "oauth_app_id": ""
     },
     "derivws": {
