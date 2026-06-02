@@ -28,7 +28,7 @@
         "oauth_scopes": ["trade", "account_manage"],
         "oauth_redirect_uri_staging": "https://staging.pipluxtrade.com",
         "oauth_redirect_uri_production": "https://pipluxtrade.com",
-        "oauth_app_id": "33oOut0fWuGWjsRPBBp38"
+        "oauth_app_id": ""
     },
     "derivws": {
         "staging": "https://staging-api.derivws.com",
