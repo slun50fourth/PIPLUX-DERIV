@@ -28,23 +28,23 @@
         "oauth_scopes": ["trade", "account_manage"],
         "oauth_redirect_uri_staging": "https://staging.pipluxtrade.com",
         "oauth_redirect_uri_production": "https://pipluxtrade.com",
-        "oauth_app_id": ""
+        "oauth_app_id": "33oOut0fWuGWjsRPBBp38"
     },
     "derivws": {
-        "staging": "https://staging-api.derivws.com",
+        "staging": "https://api.derivws.com",
         "production": "https://api.derivws.com"
     },
     "api_core": {
-        "staging": "staging-api-core.deriv.com",
+        "staging": "api-core.deriv.com",
         "production": "api-core.deriv.com"
     },
     "api": {
-        "staging": "staging-api.deriv.com",
+        "staging": "api.deriv.com",
         "production": "api.deriv.com"
     },
     "app_id": {
-        "staging": "1089",
-        "production": ""
+        "staging": "33oOut0fWuGWjsRPBBp38",
+        "production": "33oOut0fWuGWjsRPBBp38"
     },
     "colors": {
         "primary": "#118e1c",
