@@ -430,6 +430,9 @@ const TradeChart = observer(() => {
     const maxVal = processedStats.length ? Math.max(...processedStats) : -1;
     const hasData = processedStats.some((v: number) => v > 0);
 
+    // Only show winning-digit highlights while a digit contract is live (placed but not yet sold).
+    const has_active_contract = filtered_positions.some(p => !p.contract_info?.is_sold);
+
     return (
         <>
             {/* The underlying Chart Engine (Hidden visually on mobile for Digits) */}
@@ -536,7 +539,7 @@ const TradeChart = observer(() => {
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', width: '100%' }}>
                         {processedStats.slice(0, 5).map((percentage: number, idx: number) => {
                             const digit = idx;
-                            const is_winning = isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
+                            const is_winning = has_active_contract && isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
                             return (
                                 <DigitCircle
                                     key={digit}
@@ -557,7 +560,7 @@ const TradeChart = observer(() => {
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', width: '100%' }}>
                         {processedStats.slice(5, 10).map((percentage: number, idx: number) => {
                             const digit = idx + 5;
-                            const is_winning = isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
+                            const is_winning = has_active_contract && isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
                             return (
                                 <DigitCircle
                                     key={digit}
@@ -620,7 +623,7 @@ const TradeChart = observer(() => {
                             }}
                         >
                             {processedStats.map((percentage: number, digit: number) => {
-                                const is_winning = isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
+                                const is_winning = has_active_contract && isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
                                 return (
                                     <DigitCircle
                                         key={digit}
