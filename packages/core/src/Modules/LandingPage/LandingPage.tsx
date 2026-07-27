@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
-import { getSignupUrl, getHelpCentreUrl, routes } from '@deriv/shared';
+import { getSignupUrl, getHelpCentreUrl, redirectToLogin, routes } from '@deriv/shared';
 import { useStore } from '@deriv/stores';
 import './LandingPage.scss';
 
@@ -25,7 +25,7 @@ const INITIAL_TICKERS: TickerAsset[] = [
 
 const LandingPage: React.FC = () => {
   const history = useHistory();
-  const { client } = useStore();
+  const { client, common } = useStore();
   const { is_logged_in } = client;
 
   // Live Ticker simulation
@@ -120,10 +120,26 @@ const LandingPage: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const signupUrl = getSignupUrl() || 'https://partner-tracking.deriv.com/click?a=19593&o=1&c=3&link_id=1';
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (is_logged_in || urlParams.has('code') || urlParams.has('token1') || urlParams.has('acct1')) {
+      history.push({
+        pathname: routes.trader,
+        search: window.location.search,
+      });
+    }
+  }, [is_logged_in, history]);
 
   const handleSignUp = () => {
-    window.open(signupUrl, '_blank', 'noopener,noreferrer');
+    window.location.href = getSignupUrl();
+  };
+
+  const handleLogin = async () => {
+    if (is_logged_in) {
+      history.push(routes.trader);
+    } else {
+      await redirectToLogin(common.current_language);
+    }
   };
 
   const handleGoToTrade = () => {
@@ -140,11 +156,11 @@ const LandingPage: React.FC = () => {
       case 'synthetics':
         return { speed: '< 10ms', payout: 'Up to 95%+', tools: 'SmartCharts & Bot', hours: '24/7 / 365 Days' };
       case 'forex':
-        return { speed: '< 15ms', payout: 'Up to 92%+', tools: 'MT5 & WebTrader', hours: '24/5 Market Hours' };
+        return { speed: '< 15ms', payout: 'Spreads from 0.5', tools: 'MT5 & WebTrader', hours: '24/5 Monday - Friday' };
       case 'metals':
         return { speed: '< 12ms', payout: 'Up to 90%+', tools: 'Advanced Indicators', hours: '24/5 Market Hours' };
       case 'crypto':
-        return { speed: '< 20ms', payout: 'Up to 88%+', tools: 'Real-Time Streaming', hours: '24/7 / 365 Days' };
+        return { speed: '< 10ms', payout: '1:100 Leverage', tools: 'TradingView Charts', hours: '24/7 Weekend Trading' };
       default:
         return { speed: '< 10ms', payout: 'Up to 95%+', tools: 'SmartCharts & Bot', hours: '24/7 / 365 Days' };
     }
@@ -181,8 +197,8 @@ const LandingPage: React.FC = () => {
           </div>
 
           <div className="piplux-landing__nav-actions">
-            <button className="piplux-landing__btn-gold" onClick={handleSignUp}>
-              Start Trading
+            <button className="piplux-landing__btn-gold" onClick={handleLogin}>
+              Log In
             </button>
           </div>
         </header>

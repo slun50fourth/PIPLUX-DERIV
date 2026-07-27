@@ -1,8 +1,9 @@
 import React from 'react';
+import { useHistory } from 'react-router-dom';
 import classNames from 'classnames';
 
-import { DerivProductBrandLightDerivTraderLogoIcon } from '@deriv/quill-icons';
 import { observer, useStore } from '@deriv/stores';
+import { routes } from '@deriv/shared';
 import { useDevice } from '@deriv-com/ui';
 
 import { AccountActions } from 'App/Components/Layout/Header';
@@ -10,6 +11,7 @@ import { AccountsInfoLoader } from 'App/Components/Layout/Header/Components/Prel
 import NewVersionNotification from 'App/Containers/new-version-notification';
 
 const HeaderLegacy = observer(() => {
+    const history = useHistory();
     const { client, ui, notifications } = useStore();
     const { is_logged_in, is_logging_in } = client;
     const { is_app_disabled, is_route_modal_on } = ui;
@@ -36,8 +38,12 @@ const HeaderLegacy = observer(() => {
         >
             <div className='header__menu-items'>
                 {isMobile && (
-                    <div className='header__logo'>
-                        <DerivProductBrandLightDerivTraderLogoIcon height='32px' width='32px' />
+                    <div className='header__logo' onClick={() => history.push(routes.landing)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', paddingLeft: '8px' }}>
+                        <div style={{ width: '32px', height: '32px', fontSize: '15px', background: 'linear-gradient(135deg, #ffd700 0%, #b8860b 100%)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#000', fontFamily: 'Ubuntu, sans-serif' }}>
+                            <span>P</span>
+                            <span style={{ margin: '0 1px', opacity: 0.7 }}>/</span>
+                            <span>L</span>
+                        </div>
                     </div>
                 )}
                 {is_logging_in ? (

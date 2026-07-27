@@ -18,6 +18,12 @@ type TRouteConfigExtended = Omit<TRouteConfig, 'routes'> & {
 
 const traderRoutes: TRouteConfigExtended[] = [
     {
+        path: routes.trader,
+        component: Trade,
+        exact: true,
+        default: false,
+    },
+    {
         path: routes.index,
         component: Trade,
         exact: true,

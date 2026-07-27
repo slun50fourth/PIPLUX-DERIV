@@ -20,12 +20,6 @@ const LandingPage = React.lazy(() => import(/* webpackChunkName: "landing-page" 
 const getModules = () => {
     const modules = [
         {
-            path: routes.landing,
-            component: LandingPage,
-            getTitle: () => localize('PIPLUX Trading'),
-            protected: false,
-        },
-        {
             path: routes.reports,
             component: Reports,
             getTitle: () => localize('Reports'),
@@ -66,12 +60,14 @@ const getModules = () => {
             path: routes.index,
             component: LandingPage,
             getTitle: () => localize('PIPLUX Trading'),
+            exact: true,
             protected: false,
         },
         {
             path: routes.landing,
             component: LandingPage,
             getTitle: () => localize('PIPLUX Trading'),
+            exact: true,
             protected: false,
         },
         {
