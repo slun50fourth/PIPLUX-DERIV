@@ -8,8 +8,8 @@ import {
     StandaloneBarsRegularIcon,
     StandaloneChartAreaFillIcon,
     StandaloneChartAreaRegularIcon,
-    StandaloneClockThreeFillIcon,
-    StandaloneClockThreeRegularIcon,
+    StandaloneFileFillIcon,
+    StandaloneFileRegularIcon,
     StandaloneHouseBlankFillIcon,
     StandaloneHouseBlankRegularIcon,
 } from '@deriv/quill-icons';
@@ -25,8 +25,7 @@ type BottomNavProps = {
 const BottomNav = observer(({ className }: BottomNavProps) => {
     const history = useHistory();
     const location = useLocation();
-    const { client, portfolio, common } = useStore();
-    const { active_positions_count } = portfolio;
+    const { client, common } = useStore();
     const { currency, is_logged_in } = client;
     const { current_language } = common;
     const { sendBridgeEvent } = useMobileBridge();
@@ -49,45 +48,10 @@ const BottomNav = observer(({ className }: BottomNavProps) => {
             ...(is_logged_in
                 ? [
                       {
-                          icon:
-                              active_positions_count > 0 ? (
-                                  <Badge
-                                      variant='notification'
-                                      position='top-right'
-                                      label={active_positions_count.toString()}
-                                      color='danger'
-                                      size='sm'
-                                      contentSize='sm'
-                                      className='bottom-nav-item__position-badge'
-                                  >
-                                      <StandaloneClockThreeRegularIcon iconSize='sm' fill='var(--color-text-primary)' />
-                                  </Badge>
-                              ) : (
-                                  <StandaloneClockThreeRegularIcon iconSize='sm' fill='var(--color-text-primary)' />
-                              ),
-                          activeIcon:
-                              active_positions_count > 0 ? (
-                                  <Badge
-                                      variant='notification'
-                                      position='top-right'
-                                      label={active_positions_count.toString()}
-                                      color='danger'
-                                      size='sm'
-                                      contentSize='sm'
-                                      className='bottom-nav-item__position-badge'
-                                  >
-                                      <StandaloneClockThreeFillIcon iconSize='sm' fill='var(--color-text-primary)' />
-                                  </Badge>
-                              ) : (
-                                  <StandaloneClockThreeFillIcon iconSize='sm' />
-                              ),
-                          label: (
-                              <React.Fragment>
-                                  <span className='user-guide__anchor' />
-                                  <Localize i18n_default_text='Positions' />
-                              </React.Fragment>
-                          ),
-                          path: routes.trader_positions,
+                          icon: <StandaloneFileRegularIcon iconSize='sm' fill='var(--color-text-primary)' />,
+                          activeIcon: <StandaloneFileFillIcon iconSize='sm' />,
+                          label: <Localize i18n_default_text='Reports' />,
+                          path: routes.reports,
                       },
                   ]
                 : []),
@@ -99,19 +63,22 @@ const BottomNav = observer(({ className }: BottomNavProps) => {
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [active_positions_count, is_logged_in]
+        [is_logged_in]
     );
 
     const selectedIndex = React.useMemo(() => {
+        if (matchPath(location.pathname, { path: routes.contract, exact: true })) {
+            return -1; // No icon highlighted for contract details page
+        }
         if (
+            location.pathname === routes.reports ||
+            location.pathname.startsWith(`${routes.reports}/`) ||
             location.pathname === routes.positions ||
             location.pathname === routes.profit ||
             location.pathname === routes.statement
         ) {
-            return -1; // No icon highlighted for report sub-routes
-        }
-        if (matchPath(location.pathname, { path: routes.contract, exact: true })) {
-            return -1; // No icon highlighted for contract details page
+            const reportsIdx = bottomNavItems.findIndex(item => item.path === routes.reports);
+            if (reportsIdx > -1) return reportsIdx;
         }
         const idx = bottomNavItems.findIndex(item => item.path === location.pathname);
         return idx > -1 ? idx : 1; // Default to Trade
@@ -147,7 +114,7 @@ const BottomNav = observer(({ className }: BottomNavProps) => {
                     className={classNames(
                         'bottom-nav-item',
                         index === selectedIndex && 'bottom-nav-item--active',
-                        item.path === routes.trader_positions && 'bottom-nav-item--positions'
+                        item.path === routes.reports && 'bottom-nav-item--reports'
                     )}
                 />
             ))}

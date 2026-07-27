@@ -31,6 +31,44 @@ type TBottomWidgetsParams = {
     tick: TickSpotData | null;
 };
 
+// Helper to determine if a digit is a winning outcome for the current contract type and target
+const isWinningDigit = (
+    digit: number,
+    contract_type?: string,
+    trade_type_tab?: string,
+    last_digit?: number
+): boolean => {
+    const type = (trade_type_tab || contract_type || '').toUpperCase();
+    if (type.includes('OVER') && !type.includes('UNDER')) {
+        return last_digit !== undefined && last_digit !== null && digit > last_digit;
+    }
+    if (type === 'DIGITOVER_UNDER' || type === 'OVER_UNDER') {
+        return last_digit !== undefined && last_digit !== null && digit > last_digit;
+    }
+    if (type.includes('UNDER')) {
+        return last_digit !== undefined && last_digit !== null && digit < last_digit;
+    }
+    if (type.includes('MATCH') && !type.includes('DIFF')) {
+        return last_digit !== undefined && last_digit !== null && digit === last_digit;
+    }
+    if (type === 'DIGITMATCH_DIFF' || type === 'MATCH_DIFF') {
+        return last_digit !== undefined && last_digit !== null && digit === last_digit;
+    }
+    if (type.includes('DIFF')) {
+        return last_digit !== undefined && last_digit !== null && digit !== last_digit;
+    }
+    if (type.includes('EVEN') && !type.includes('ODD')) {
+        return digit % 2 === 0;
+    }
+    if (type === 'DIGITEVEN_ODD' || type === 'EVEN_ODD') {
+        return digit % 2 === 0;
+    }
+    if (type.includes('ODD')) {
+        return digit % 2 !== 0;
+    }
+    return false;
+};
+
 // Overlay component that renders digit circles with a bouncing cursor
 const DigitCircle = ({
     digit,
@@ -41,6 +79,7 @@ const DigitCircle = ({
     isDarkMode,
     isMobile,
     isActive,
+    isWinning,
     onClick,
 }: {
     digit: number;
@@ -51,30 +90,44 @@ const DigitCircle = ({
     isDarkMode: boolean;
     isMobile?: boolean;
     isActive: boolean;
+    isWinning?: boolean;
     onClick?: () => void;
 }) => {
     const getBottomBorderColor = () => {
         if (isMin) return '#ef4444'; // red for least frequent
         if (isMax) return '#14b8a6'; // teal/green for most frequent
+        if (isWinning) return '#22c55e'; // green for winning digit
         return isDarkMode ? '#475569' : '#cbd5e1';
     };
 
     const size = isMobile ? '46px' : '40px';
 
     const getBgColor = () => {
+        if (isActive && isWinning) return '#22c55e';
         if (isActive) return isDarkMode ? '#ffffff' : '#1e293b';
+        if (isWinning) return isDarkMode ? 'rgba(34, 197, 94, 0.15)' : '#f0fdf4';
         return isDarkMode ? '#243042' : '#ffffff'; // Lighter dark background for better contrast in dark mode
     };
 
+    const getBorderColor = () => {
+        if (isActive && isWinning) return '#16a34a';
+        if (isWinning) return '#22c55e';
+        return isDarkMode ? '#334155' : '#e2e8f0';
+    };
+
     const getTextColor = () => {
+        if (isActive && isWinning) return '#ffffff';
         if (isActive) return isDarkMode ? '#1e293b' : '#ffffff';
+        if (isWinning) return isDarkMode ? '#4ade80' : '#15803d';
         return isDarkMode ? '#f1f5f9' : '#1e293b';
     };
 
     const getPercentColor = () => {
+        if (isActive && isWinning) return '#f0fdf4';
         if (isActive) return isDarkMode ? '#475569' : '#e2e8f0';
         if (isMin) return '#ef4444';
         if (isMax) return '#14b8a6';
+        if (isWinning) return isDarkMode ? '#86efac' : '#16a34a';
         return isDarkMode ? '#94a3b8' : '#64748b';
     };
 
@@ -99,10 +152,10 @@ const DigitCircle = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: '9999px',
-                    border: `2px solid ${isDarkMode ? '#334155' : '#e2e8f0'}`,
+                    border: `2px solid ${getBorderColor()}`,
                     borderBottomColor: getBottomBorderColor(),
                     backgroundColor: getBgColor(),
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                    boxShadow: isWinning ? '0 0 8px rgba(34, 197, 94, 0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
                     transition: 'all 0.25s ease',
                     width: size,
                     height: size,
@@ -209,6 +262,7 @@ const TradeChart = observer(() => {
         tick_data,
         digit_stats,
         last_digit,
+        trade_type_tab,
     } = useTraderStore();
     const is_accumulator = isAccumulatorContract(contract_type);
     const timeoutsMapRef = React.useRef<Map<number, NodeJS.Timeout>>(new Map());
@@ -482,6 +536,7 @@ const TradeChart = observer(() => {
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', width: '100%' }}>
                         {processedStats.slice(0, 5).map((percentage: number, idx: number) => {
                             const digit = idx;
+                            const is_winning = isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
                             return (
                                 <DigitCircle
                                     key={digit}
@@ -493,6 +548,7 @@ const TradeChart = observer(() => {
                                     isDarkMode={is_dark_mode_on}
                                     isMobile={true}
                                     isActive={digit === last_digit}
+                                    isWinning={is_winning}
                                     onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                 />
                             );
@@ -501,6 +557,7 @@ const TradeChart = observer(() => {
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', width: '100%' }}>
                         {processedStats.slice(5, 10).map((percentage: number, idx: number) => {
                             const digit = idx + 5;
+                            const is_winning = isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
                             return (
                                 <DigitCircle
                                     key={digit}
@@ -512,6 +569,7 @@ const TradeChart = observer(() => {
                                     isDarkMode={is_dark_mode_on}
                                     isMobile={true}
                                     isActive={digit === last_digit}
+                                    isWinning={is_winning}
                                     onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                 />
                             );
@@ -561,20 +619,24 @@ const TradeChart = observer(() => {
                                 flexWrap: 'nowrap',
                             }}
                         >
-                            {processedStats.map((percentage: number, digit: number) => (
-                                <DigitCircle
-                                    key={digit}
-                                    digit={digit}
-                                    percentage={percentage}
-                                    isLatest={digit === latestDigit}
-                                    isMin={hasData && percentage === minVal}
-                                    isMax={hasData && percentage === maxVal}
-                                    isDarkMode={is_dark_mode_on}
-                                    isMobile={false}
-                                    isActive={digit === last_digit}
-                                    onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
-                                />
-                            ))}
+                            {processedStats.map((percentage: number, digit: number) => {
+                                const is_winning = isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
+                                return (
+                                    <DigitCircle
+                                        key={digit}
+                                        digit={digit}
+                                        percentage={percentage}
+                                        isLatest={digit === latestDigit}
+                                        isMin={hasData && percentage === minVal}
+                                        isMax={hasData && percentage === maxVal}
+                                        isDarkMode={is_dark_mode_on}
+                                        isMobile={false}
+                                        isActive={digit === last_digit}
+                                        isWinning={is_winning}
+                                        onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
+                                    />
+                                );
+                            })}
                         </div>
                     </div>,
                     document.body
