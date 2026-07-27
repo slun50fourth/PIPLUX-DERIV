@@ -116,9 +116,9 @@
     },
     "scripts": {
         "serve": "f () { npm exec --workspace=@deriv/${1:-'*'} -- npm run serve $npm_config_open;}; f",
-        "bootstrap": "npm ci --strict-peer-deps --verbose",
-        "bootstrap:ci": "npm ci --strict-peer-deps --verbose",
-        "bootstrap:dev": "npm install --strict-peer-deps --verbose",
+        "bootstrap": "npm ci --verbose",
+        "bootstrap:ci": "npm ci --verbose",
+        "bootstrap:dev": "npm install --verbose",
         "clean": "echo \"This will remove ALL node_modules directories in the project.\" && read -p \"Are you sure? (y/N): \" -n 1 -r && echo && if [[ $REPLY =~ ^[Yy]$ ]]; then echo \"Removing all node_modules directories...\" && find . -name \"node_modules\" -type d -prune -exec rm -rf {} + && echo \"All node_modules directories removed\"; else echo \"Operation cancelled\"; fi",
         "build:all": "npm run build --workspace=@deriv/components && npm run build --workspace=@deriv/reports && npm run build --workspace=@deriv/trader && npm run --workspaces --if-present build",
         "generate:colors": "node ./scripts/generate-colors.js",
