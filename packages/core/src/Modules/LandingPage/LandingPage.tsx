@@ -123,7 +123,7 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (is_logged_in || urlParams.has('code') || urlParams.has('token1') || urlParams.has('acct1')) {
-      history.push({
+      history.replace({
         pathname: routes.trader,
         search: window.location.search,
       });
@@ -168,6 +168,13 @@ const LandingPage: React.FC = () => {
 
   const calcRes = getCalcResults();
   void calcRes; // suppress unused variable warning
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const isLoginRedirect = urlParams.has('code') || urlParams.has('token1') || urlParams.has('acct1');
+
+  if (isLoginRedirect) {
+    return null;
+  }
 
   return (
     <div className="piplux-landing">

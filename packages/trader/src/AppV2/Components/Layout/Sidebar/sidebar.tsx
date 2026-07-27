@@ -63,8 +63,12 @@ const Sidebar = observer(() => {
     }, [onMount, onUnmount]);
 
     const isActiveRoute = (path: string) => {
-        if (path === routes.index) {
-            return location.pathname === routes.index;
+        if (path === routes.index || path === routes.trader) {
+            return (
+                location.pathname === routes.index ||
+                location.pathname === routes.trader ||
+                location.pathname.startsWith(`${routes.trader}/`)
+            );
         }
         return location.pathname.startsWith(path);
     };
@@ -98,7 +102,7 @@ const Sidebar = observer(() => {
     const handleHomeClick = () => {
         closeSidebarFlyout();
         sendBridgeEvent('trading:home', () => {
-            window.location.href = getHomeUrl();
+            history.push(routes.landing);
         });
     };
 
@@ -233,12 +237,12 @@ const Sidebar = observer(() => {
             <aside
                 ref={sidebar_ref}
                 className={classNames('sidebar', {
-                    sidebar__hidden: !isActiveRoute(routes.index),
+                    sidebar__hidden: !isActiveRoute(routes.index) && !isActiveRoute(routes.trader),
                 })}
                 data-testid='dt_sidebar'
             >
                 {/* Logo Section */}
-                <div className='sidebar__header'>
+                <div className='sidebar__header' onClick={() => history.push(routes.landing)} style={{ cursor: 'pointer' }}>
                     {/* [AI] */}
                     <img
                         src={`/${is_dark_mode_on ? getBrandLogoDark() : getBrandLogo()}`}

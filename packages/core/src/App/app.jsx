@@ -31,6 +31,11 @@ const App = ({ root_store }) => {
     const language = preferred_language ?? getInitialLanguage();
     const { isBridgeAvailable, sendBridgeEvent } = useMobileBridge();
 
+    const [is_oauth_exchanging, setIsOAuthExchanging] = React.useState(() => {
+        const params = new URLSearchParams(window.location.search);
+        return Boolean(params.get('code') || params.get('token1') || params.get('acct1'));
+    });
+
     // Handle OAuth2 callback — the auth server redirects back to / with ?code=...&state=...
     // No separate /callback route needed; we handle it inline here on every mount.
     React.useEffect(() => {
@@ -45,7 +50,12 @@ const App = ({ root_store }) => {
             window.history.replaceState({}, '', url.toString());
         };
 
-        if (!code) return; // Normal load — not an OAuth callback
+        if (!code) {
+            if (!params.get('token1') && !params.get('acct1')) {
+                setIsOAuthExchanging(false);
+            }
+            return; // Normal load — not an OAuth callback
+        }
 
         // Validate CSRF token
         const stored_csrf = sessionStorage.getItem('oauth_csrf_token');
@@ -54,6 +64,7 @@ const App = ({ root_store }) => {
             console.error('[OAuth] CSRF token mismatch — aborting token exchange');
             clearTokens();
             cleanURL();
+            setIsOAuthExchanging(false);
             return;
         }
 
@@ -61,15 +72,15 @@ const App = ({ root_store }) => {
 
         exchangeCodeForToken(code)
             .then(() => {
-                // Token is now in sessionStorage. Reload to /  so initStore
-                // picks it up on fresh boot — avoids the race where onClientInit
-                // already ran before the token exchange completed.
-                window.location.replace('/');
+                // Token is now in sessionStorage. Reload directly to /trader
+                // so initStore boots straight into WebTrader without flashing the landing page.
+                window.location.replace('/trader');
             })
             .catch(err => {
                 // eslint-disable-next-line no-console
                 console.error('[OAuth] Token exchange failed:', err);
                 cleanURL();
+                setIsOAuthExchanging(false);
             });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -127,6 +138,10 @@ const App = ({ root_store }) => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    if (is_oauth_exchanging) {
+        return <Loading />;
+    }
 
     return (
         <Router basename={has_base ? `/${base}` : null}>

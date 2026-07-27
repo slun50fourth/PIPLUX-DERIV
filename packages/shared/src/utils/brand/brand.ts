@@ -101,17 +101,7 @@ export const getDomainName = () => {
  * Returns the URL unchanged when running on localhost or an unrecognised hostname.
  */
 const substituteDerivDomain = (url: string): string => {
-    const domain = getDomainName();
-    if (!domain || domain !== getBrandDomain()) return url;
-    try {
-        // Parse the URL so we only rewrite the hostname — not query params or path segments
-        const parsed = new URL(url);
-        parsed.hostname = parsed.hostname.replace(/deriv\.com$/, domain);
-        return parsed.toString();
-    } catch {
-        // Fallback for non-absolute strings (e.g. "api-core.deriv.com", "home.deriv.com/dashboard")
-        return url.replace(/deriv\.com/, domain);
-    }
+    return url;
 };
 
 /**
