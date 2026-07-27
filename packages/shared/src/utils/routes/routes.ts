@@ -1,6 +1,8 @@
 export const routes = {
     // Essential routes
     index: '/',
+    landing: '/landing',
+    trader: '/trader',
     callback_page: '/callback',
     error404: '/404',
     endpoint: '/endpoint',
@@ -19,6 +21,7 @@ export const routes = {
 
 export const DISABLE_LANDSCAPE_BLOCKER_ROUTES = [
     routes.index,
+    routes.landing,
     routes.reports,
     routes.endpoint,
     /** because contract route has dynamic id */

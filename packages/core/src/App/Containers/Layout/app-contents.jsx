@@ -10,7 +10,7 @@ import { useDevice } from '@deriv-com/ui';
 
 import CookieBanner from '../../Components/Elements/CookieBanner/cookie-banner.jsx';
 
-const AppContents = observer(({ children }) => {
+const AppContents = observer(({ children, isLandingPage }) => {
     const [show_cookie_banner, setShowCookieBanner] = React.useState(false);
     const { client, common, ui } = useStore();
     const { isDesktop, isMobile } = useDevice();
@@ -80,6 +80,10 @@ const AppContents = observer(({ children }) => {
     const onDecline = () => {
         setShowCookieBanner(false);
     };
+
+    if (isLandingPage) {
+        return <>{children}</>;
+    }
 
     return (
         <div

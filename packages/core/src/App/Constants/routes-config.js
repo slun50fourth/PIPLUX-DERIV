@@ -15,8 +15,16 @@ const Trader = React.lazy(() => import(/* webpackChunkName: "trader" */ '@deriv/
 
 const Reports = React.lazy(() => import(/* webpackChunkName: "reports" */ '@deriv/reports'));
 
+const LandingPage = React.lazy(() => import(/* webpackChunkName: "landing-page" */ 'Modules/LandingPage'));
+
 const getModules = () => {
     const modules = [
+        {
+            path: routes.landing,
+            component: LandingPage,
+            getTitle: () => localize('PIPLUX Trading'),
+            protected: false,
+        },
         {
             path: routes.reports,
             component: Reports,
@@ -56,6 +64,18 @@ const getModules = () => {
         },
         {
             path: routes.index,
+            component: LandingPage,
+            getTitle: () => localize('PIPLUX Trading'),
+            protected: false,
+        },
+        {
+            path: routes.landing,
+            component: LandingPage,
+            getTitle: () => localize('PIPLUX Trading'),
+            protected: false,
+        },
+        {
+            path: routes.trader,
             component: Trader,
             getTitle: () => localize('Trader'),
             protected: false,

@@ -96,6 +96,17 @@ const MenuPage = observer(() => {
                     )}
                     {/* [/AI] */}
 
+                    {/* PIPLUX Landing Page Navigation */}
+                    <div className='header__menu-section'>
+                        <div className='menu-page__item' onClick={() => history.push(routes.landing)}>
+                            <MenuLink
+                                icon={<StandaloneFileLinesRegularIcon iconSize='sm' />}
+                                text={localize('PIPLUX Landing Page')}
+                                suffix_icon={<StandaloneChevronRightRegularIcon iconSize='sm' />}
+                            />
+                        </div>
+                    </div>
+
                     {/* Settings Section */}
                     {(isFeatureEnabled('language_switcher') || isFeatureEnabled('dark_mode')) && (
                         <div className='header__menu-section'>

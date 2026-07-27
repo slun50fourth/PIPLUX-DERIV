@@ -27,14 +27,17 @@ const copyConfig = base => {
         {
             from: path.resolve(__dirname, '../../../node_modules/@deriv/trader/dist/trader'),
             to: 'trader',
+            noErrorOnMissing: true,
         },
         {
             from: path.resolve(__dirname, '../../../node_modules/@deriv/reports/dist/reports/js/'),
             to: 'reports/js',
+            noErrorOnMissing: true,
         },
         {
             from: path.resolve(__dirname, '../../../node_modules/@deriv/reports/dist/reports/css/'),
             to: 'reports/css',
+            noErrorOnMissing: true,
         },
         { from: path.resolve(__dirname, '../scripts/CNAME'), to: 'CNAME', toType: 'file', noErrorOnMissing: true },
         {

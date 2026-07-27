@@ -44,7 +44,7 @@ const BottomNav = observer(({ className }: BottomNavProps) => {
                 icon: <StandaloneChartAreaRegularIcon iconSize='sm' fill='var(--color-text-primary)' />,
                 activeIcon: <StandaloneChartAreaFillIcon iconSize='sm' />,
                 label: <Localize i18n_default_text='Trade' />,
-                path: routes.index,
+                path: routes.trader,
             },
             ...(is_logged_in
                 ? [
@@ -121,12 +121,7 @@ const BottomNav = observer(({ className }: BottomNavProps) => {
         const item = bottomNavItems[index];
 
         if (item.action === 'home') {
-            sendBridgeEvent('trading:home', () => {
-                const brandUrl = getBrandUrl();
-                const lang_param = current_language ? `&lang=${encodeURIComponent(current_language)}` : '';
-                const curr = encodeURIComponent(currency || '');
-                window.location.href = `${brandUrl}/home?source=options&acc=options&curr=${curr}${lang_param}`;
-            });
+            history.push(routes.landing);
             return;
         }
 

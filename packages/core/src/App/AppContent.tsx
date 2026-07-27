@@ -6,6 +6,8 @@ import { ThemeProvider } from '@deriv-com/quill-ui';
 import { getInitialLanguage, useTranslations } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 
+import { useLocation } from 'react-router-dom';
+
 import ErrorBoundary from './Components/Elements/Errors/error-boundary.jsx';
 import LandscapeBlocker from './Components/Elements/LandscapeBlocker';
 import AppToastMessages from './Containers/app-toast-messages.jsx';
@@ -22,6 +24,8 @@ const AppContent: React.FC<{ passthrough: any }> = observer(({ passthrough }) =>
     const { is_dark_mode_on } = store.ui;
 
     const { isMobile } = useDevice();
+    const location = useLocation();
+    const isLandingPage = location.pathname === '/' || location.pathname === '/landing' || location.pathname === '/landing/';
 
     const { switchLanguage } = useTranslations();
     const { isBridgeAvailable, sendBridgeEvent } = useMobileBridge();
@@ -44,6 +48,18 @@ const AppContent: React.FC<{ passthrough: any }> = observer(({ passthrough }) =>
             });
         }
     }, [isBridgeAvailable, sendBridgeEvent, current_language, is_dark_mode_on]);
+
+    if (isLandingPage) {
+        return (
+            <React.Fragment>
+                <LandscapeBlocker />
+                <ErrorBoundary root_store={store}>
+                    <Routes {...({ passthrough } as any)} />
+                </ErrorBoundary>
+                <AppToastMessages />
+            </React.Fragment>
+        );
+    }
 
     return (
         <ThemeProvider theme={is_dark_mode_on ? 'dark' : 'light'}>
