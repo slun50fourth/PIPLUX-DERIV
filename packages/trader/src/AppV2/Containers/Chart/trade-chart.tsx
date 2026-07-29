@@ -484,7 +484,7 @@ const TradeChart = observer(() => {
     const has_active_contract =
         isDigitsMarket &&
         all_positions.some(p => {
-            const info = p.contract_info;
+            const info = p.contract_info as any;
             if (!info || info.is_sold) return false;
             if (info.underlying !== symbol) return false;
             return true;
