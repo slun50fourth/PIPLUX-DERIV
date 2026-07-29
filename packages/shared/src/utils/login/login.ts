@@ -40,7 +40,7 @@ const storePKCEVerifier = (verifier: string): void => {
  * Uses window.location.replace() so the authorize URL does not appear
  * in browser history (prevents back-button returning to a broken state).
  */
-export const redirectToLogin = async (_language?: string): Promise<void> => {
+export const redirectToLogin = async (_language?: string, is_signup: boolean = false): Promise<void> => {
     const verifier = generateCodeVerifier();
     const challenge = await generateCodeChallenge(verifier);
     storePKCEVerifier(verifier);
@@ -57,6 +57,9 @@ export const redirectToLogin = async (_language?: string): Promise<void> => {
         code_challenge: challenge,
         code_challenge_method: 'S256',
     });
+    if (is_signup) {
+        params.set('action', 'signup');
+    }
     const oauth_app_id = getOAuthAppId();
     if (oauth_app_id) params.set('app_id', oauth_app_id);
 
@@ -65,6 +68,5 @@ export const redirectToLogin = async (_language?: string): Promise<void> => {
 };
 
 export const redirectToSignUp = (_language?: string): void => {
-    const signup_url = getSignupUrl();
-    if (signup_url) window.open(signup_url, '_blank', 'noopener,noreferrer');
+    redirectToLogin(_language, true);
 };

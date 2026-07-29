@@ -6,7 +6,7 @@ import { observer, useStore } from '@deriv/stores';
 import { routes } from '@deriv/shared';
 import { useDevice } from '@deriv-com/ui';
 
-import { AccountActions } from 'App/Components/Layout/Header';
+import { AccountActions, MenuLinks } from 'App/Components/Layout/Header';
 import { AccountsInfoLoader } from 'App/Components/Layout/Header/Components/Preloader';
 import NewVersionNotification from 'App/Containers/new-version-notification';
 
@@ -37,13 +37,24 @@ const HeaderLegacy = observer(() => {
             })}
         >
             <div className='header__menu-items'>
-                {isMobile && (
+                {isMobile ? (
                     <div className='header__logo' onClick={() => history.push(routes.landing)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', paddingLeft: '8px' }}>
                         <div style={{ width: '32px', height: '32px', fontSize: '15px', background: 'linear-gradient(135deg, #ffd700 0%, #b8860b 100%)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#000', fontFamily: 'Ubuntu, sans-serif' }}>
                             <span>P</span>
                             <span style={{ margin: '0 1px', opacity: 0.7 }}>/</span>
                             <span>L</span>
                         </div>
+                    </div>
+                ) : (
+                    <div className='header__menu-left'>
+                        <div className='header__logo' onClick={() => history.push(routes.landing)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', paddingLeft: '16px', marginRight: '16px' }}>
+                            <div style={{ width: '32px', height: '32px', fontSize: '15px', background: 'linear-gradient(135deg, #ffd700 0%, #b8860b 100%)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#000', fontFamily: 'Ubuntu, sans-serif' }}>
+                                <span>P</span>
+                                <span style={{ margin: '0 1px', opacity: 0.7 }}>/</span>
+                                <span>L</span>
+                            </div>
+                        </div>
+                        <MenuLinks />
                     </div>
                 )}
                 {is_logging_in ? (

@@ -1,5 +1,5 @@
 import { Text } from '@deriv/components';
-import { LegacyReportsIcon } from '@deriv/quill-icons';
+import { LegacyReportsIcon, StandaloneChartAreaRegularIcon } from '@deriv/quill-icons';
 import { routes } from '@deriv/shared';
 import { observer, useStore } from '@deriv/stores';
 import { useTranslations } from '@deriv-com/translations';
@@ -37,6 +37,18 @@ const ReportTab = () => {
     );
 };
 
+const TradeTab = () => {
+    const { localize } = useTranslations();
+    return (
+        <MenuItems
+            id={'dt_trade_tab'}
+            icon={<StandaloneChartAreaRegularIcon iconSize='sm' fill='var(--color-text-primary)' className='header__icon' />}
+            text={localize('Trade')}
+            link_to={routes.trader}
+        />
+    );
+};
+
 const MenuLinks = observer(({ is_traders_hub_routes = false }) => {
     const { currentLang } = useTranslations();
     const { client } = useStore();
@@ -46,7 +58,12 @@ const MenuLinks = observer(({ is_traders_hub_routes = false }) => {
 
     return (
         <div key={`menu-links__${currentLang}`} className='header__menu-links'>
-            {!is_traders_hub_routes && <ReportTab />}
+            {!is_traders_hub_routes && (
+                <>
+                    <TradeTab />
+                    <ReportTab />
+                </>
+            )}
         </div>
     );
 });

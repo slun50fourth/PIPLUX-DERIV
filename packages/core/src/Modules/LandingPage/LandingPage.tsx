@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
-import { getSignupUrl, getHelpCentreUrl, redirectToLogin, routes } from '@deriv/shared';
+import { getHelpCentreUrl, redirectToLogin, redirectToSignUp, routes } from '@deriv/shared';
 import { useStore } from '@deriv/stores';
 import './LandingPage.scss';
 
@@ -130,8 +130,12 @@ const LandingPage: React.FC = () => {
     }
   }, [is_logged_in, history]);
 
-  const handleSignUp = () => {
-    window.location.href = getSignupUrl();
+  const handleSignUp = async () => {
+    if (is_logged_in) {
+      history.push(routes.trader);
+    } else {
+      await redirectToSignUp(common.current_language);
+    }
   };
 
   const handleLogin = async () => {
@@ -224,7 +228,7 @@ const LandingPage: React.FC = () => {
 
           <div className="piplux-landing__hero-ctas piplux-reveal piplux-reveal--fade-up" style={{ transitionDelay: '0.3s' }}>
             <button className="piplux-landing__btn-gold" onClick={handleSignUp}>
-              Create Free Account &rarr;
+              Sign up &rarr;
             </button>
             <button className="piplux-landing__btn-outline" onClick={handleGoToTrade}>
               Open PIPLUX WebTrader
