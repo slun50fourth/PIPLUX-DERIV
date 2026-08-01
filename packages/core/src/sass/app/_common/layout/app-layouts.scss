@@ -19,7 +19,7 @@
     }
     .derivatives-trader {
         /* Making the wrapper stack above the body */
-        overscroll-behavior: none;
+        overscroll-behavior: auto; /* re-enable native pull-to-refresh */
 
         .trade-notifications {
             position: absolute;
