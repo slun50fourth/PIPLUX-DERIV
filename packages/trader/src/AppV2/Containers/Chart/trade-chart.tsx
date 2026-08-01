@@ -379,14 +379,14 @@ const TradeChart = observer(() => {
                 // Flash the outcome on the specific exit digit
                 const closedPosition = filtered_positions.find(p => p.contract_info.contract_id === positionId);
                 if (closedPosition && closedPosition.contract_info) {
-                    const info = closedPosition.contract_info;
+                    const info = closedPosition.contract_info as any;
                     const profit = info.profit ?? 0;
                     const exitDigit = info.exit_tick_display_value 
                         ? parseInt(info.exit_tick_display_value.toString().slice(-1)) 
                         : null;
                     
-                    if (exitDigit !== null) {
-                        setFlashDigit({ digit: exitDigit, outcome: profit >= 0 ? 'win' : 'lose' });
+                    if (exitDigit !== null && !isNaN(exitDigit)) {
+                        setFlashDigit({ digit: exitDigit, outcome: Number(profit) >= 0 ? 'win' : 'lose' });
                         setTimeout(() => {
                             setFlashDigit(prev => (prev?.digit === exitDigit ? null : prev));
                         }, 1000); // 1 second flash
@@ -674,7 +674,7 @@ const TradeChart = observer(() => {
                             }}
                         >
                             {processedStats.map((percentage: number, digit: number) => {
-                                const is_winning = has_active_contract && isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
+                                const is_winning = isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
                                 return (
                                     <DigitCircle
                                         key={digit}
@@ -687,8 +687,7 @@ const TradeChart = observer(() => {
                                         isMobile={false}
                                         isActive={digit === last_digit}
                                         isWinning={is_winning}
-                                        hasActiveContract={has_active_contract}
-                                        contractOutcome={active_contract_outcome}
+                                        flashOutcome={flashDigit?.digit === digit ? flashDigit.outcome : null as any}
                                         onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                     />
                                 );
