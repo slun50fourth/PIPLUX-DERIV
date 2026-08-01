@@ -81,6 +81,7 @@ const DigitCircle = ({
     isActive,
     isWinning,
     hasActiveContract,
+    contractOutcome,
     onClick,
 }: {
     digit: number;
@@ -93,6 +94,7 @@ const DigitCircle = ({
     isActive: boolean;
     isWinning?: boolean;
     hasActiveContract?: boolean;
+    contractOutcome?: 'win' | 'lose' | 'none';
     onClick?: () => void;
 }) => {
     // Determine visual state for the latest-tick digit during a live contract
@@ -102,6 +104,11 @@ const DigitCircle = ({
         return isWinning ? 'win' : 'lose';
     })();
 
+    // Contract is currently winning → highlight winning digits green
+    // Contract is currently losing  → highlight losing digits red
+    const showWinHighlight = hasActiveContract && contractOutcome === 'win' && isWinning;
+    const showLoseHighlight = hasActiveContract && contractOutcome === 'lose' && !isWinning;
+
     // Latest-tick digit is rendered slightly larger so it stands out
     const size = isMobile
         ? isLatest ? '54px' : '46px'
@@ -110,19 +117,20 @@ const DigitCircle = ({
     const getBottomBorderColor = () => {
         if (latestWinState === 'win') return '#14b8a6';
         if (latestWinState === 'lose') return '#ef4444';
+        if (showWinHighlight) return '#22c55e';
+        if (showLoseHighlight) return '#ef4444';
         if (isMin) return '#ef4444'; // red for least frequent
         if (isMax) return '#14b8a6'; // teal/green for most frequent
-        if (isWinning) return '#22c55e'; // green for winning digit
         return isDarkMode ? '#475569' : '#cbd5e1';
     };
 
     const getBgColor = () => {
-        if (latestWinState === 'win') return '#14b8a6';  // teal – live contract winning
-        if (latestWinState === 'lose') return '#ef4444'; // red  – live contract losing
+        if (latestWinState === 'win') return '#14b8a6';
+        if (latestWinState === 'lose') return '#ef4444';
         if (latestWinState === 'neutral') return isDarkMode ? '#334155' : '#94a3b8';
-        if (isActive && isWinning) return '#22c55e';
+        if (showWinHighlight) return '#22c55e';
+        if (showLoseHighlight) return 'rgba(239, 68, 68, 0.25)';
         if (isActive) return isDarkMode ? '#ffffff' : '#1e293b';
-        if (isWinning) return isDarkMode ? 'rgba(34, 197, 94, 0.15)' : '#f0fdf4';
         return isDarkMode ? '#243042' : '#ffffff';
     };
 
@@ -130,26 +138,26 @@ const DigitCircle = ({
         if (latestWinState === 'win') return '#0d9488';
         if (latestWinState === 'lose') return '#dc2626';
         if (latestWinState === 'neutral') return isDarkMode ? '#475569' : '#94a3b8';
-        if (isActive && isWinning) return '#16a34a';
-        if (isWinning) return '#22c55e';
+        if (showWinHighlight) return '#16a34a';
+        if (showLoseHighlight) return '#ef4444';
         return isDarkMode ? '#334155' : '#e2e8f0';
     };
 
     const getTextColor = () => {
         if (latestWinState !== 'none') return '#ffffff';
-        if (isActive && isWinning) return '#ffffff';
+        if (showWinHighlight) return '#ffffff';
+        if (showLoseHighlight) return isDarkMode ? '#fca5a5' : '#dc2626';
         if (isActive) return isDarkMode ? '#1e293b' : '#ffffff';
-        if (isWinning) return isDarkMode ? '#4ade80' : '#15803d';
         return isDarkMode ? '#f1f5f9' : '#1e293b';
     };
 
     const getPercentColor = () => {
         if (latestWinState !== 'none') return 'rgba(255,255,255,0.82)';
-        if (isActive && isWinning) return '#f0fdf4';
+        if (showWinHighlight) return '#f0fdf4';
+        if (showLoseHighlight) return isDarkMode ? '#fca5a5' : '#dc2626';
         if (isActive) return isDarkMode ? '#475569' : '#e2e8f0';
         if (isMin) return '#ef4444';
         if (isMax) return '#14b8a6';
-        if (isWinning) return isDarkMode ? '#86efac' : '#16a34a';
         return isDarkMode ? '#94a3b8' : '#64748b';
     };
 
@@ -166,8 +174,10 @@ const DigitCircle = ({
             ? '0 0 14px rgba(20, 184, 166, 0.55)'
             : latestWinState === 'lose'
             ? '0 0 14px rgba(239, 68, 68, 0.55)'
-            : isWinning
-            ? '0 0 8px rgba(34, 197, 94, 0.3)'
+            : showWinHighlight
+            ? '0 0 10px rgba(34, 197, 94, 0.45)'
+            : showLoseHighlight
+            ? '0 0 10px rgba(239, 68, 68, 0.3)'
             : '0 1px 3px rgba(0,0,0,0.1)';
 
     return (
@@ -481,14 +491,25 @@ const TradeChart = observer(() => {
     // Only show winning-digit highlights while a digit contract is live (placed but not yet sold).
     // Use all_positions directly – bypasses isContractSupportedAndStarted which returns false
     // for newly placed real-account trades, causing the initial highlight to lag until refresh.
-    const has_active_contract =
-        isDigitsMarket &&
-        all_positions.some(p => {
-            const info = p.contract_info as any;
-            if (!info || info.is_sold) return false;
-            if (info.underlying !== symbol) return false;
-            return true;
-        });
+    const active_digit_contract = isDigitsMarket
+        ? all_positions.find(p => {
+              const info = p.contract_info as any;
+              if (!info || info.is_sold) return false;
+              if (info.underlying !== symbol) return false;
+              return true;
+          })
+        : undefined;
+
+    const has_active_contract = !!active_digit_contract;
+
+    // Determine if the live contract is currently winning or losing based on profit
+    const active_contract_outcome: 'win' | 'lose' | 'none' = (() => {
+        if (!active_digit_contract) return 'none';
+        const info = active_digit_contract.contract_info as any;
+        if (!info) return 'none';
+        const profit = info.profit ?? 0;
+        return profit >= 0 ? 'win' : 'lose';
+    })();
 
     return (
         <>
@@ -610,6 +631,7 @@ const TradeChart = observer(() => {
                                     isActive={digit === last_digit}
                                     isWinning={is_winning}
                                     hasActiveContract={has_active_contract}
+                                    contractOutcome={active_contract_outcome}
                                     onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                 />
                             );
@@ -631,6 +653,8 @@ const TradeChart = observer(() => {
                                     isMobile={true}
                                     isActive={digit === last_digit}
                                     isWinning={is_winning}
+                                    hasActiveContract={has_active_contract}
+                                    contractOutcome={active_contract_outcome}
                                     onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                 />
                             );
@@ -695,6 +719,7 @@ const TradeChart = observer(() => {
                                         isActive={digit === last_digit}
                                         isWinning={is_winning}
                                         hasActiveContract={has_active_contract}
+                                        contractOutcome={active_contract_outcome}
                                         onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                     />
                                 );
