@@ -46,11 +46,17 @@ const AccountSwitcher = observer(
                 onAccountSwitch?.();
 
                 // Note: switchAccount is fire-and-forget - it updates localStorage and reconnects WebSocket
-                // The parent component's loading state will be reset when new data arrives via useDerivativesAccount
                 client.switchAccount(account.account_id, account.account_type);
+
+                // Close dropdown/sheet before reload
+                onClose?.();
+
+                // Force full page reload so all components re-initialize with fresh account data
+                window.location.reload();
+                return;
             }
 
-            // Close dropdown/sheet after switching
+            // Close dropdown/sheet (same account clicked)
             onClose?.();
         };
 
