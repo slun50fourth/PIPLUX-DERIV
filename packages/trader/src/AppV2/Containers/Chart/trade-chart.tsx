@@ -71,7 +71,6 @@ const isWinningDigit = (
     return false;
 };
 
-// Overlay component that renders digit circles with a bouncing cursor
 const DigitCircle = ({
     digit,
     percentage,
@@ -83,6 +82,7 @@ const DigitCircle = ({
     isActive,
     isWinning,
     flashOutcome,
+    flashPrice,
     onClick,
 }: {
     digit: number;
@@ -95,6 +95,7 @@ const DigitCircle = ({
     isActive: boolean;
     isWinning?: boolean;
     flashOutcome?: 'win' | 'lose' | null;
+    flashPrice?: string | null;
     onClick?: () => void;
 }) => {
     // Latest-tick digit is rendered slightly larger so it stands out
@@ -103,8 +104,8 @@ const DigitCircle = ({
         : isLatest ? '46px' : '40px';
 
     const getBottomBorderColor = () => {
-        if (flashOutcome === 'win') return '#16a34a';
-        if (flashOutcome === 'lose') return '#dc2626';
+        if (flashOutcome === 'win') return '#00ff55';
+        if (flashOutcome === 'lose') return '#ff003c';
         if (isMin) return '#ef4444'; // red for least frequent
         if (isMax) return '#14b8a6'; // teal/green for most frequent
         if (isWinning) return '#14b8a6'; // Teal border for target digits
@@ -112,15 +113,15 @@ const DigitCircle = ({
     };
 
     const getBgColor = () => {
-        if (flashOutcome === 'win') return '#22c55e'; // Bold green flash
-        if (flashOutcome === 'lose') return '#ef4444'; // Bold red flash
+        if (flashOutcome === 'win') return '#00ff55'; // Bold green flash
+        if (flashOutcome === 'lose') return '#ff003c'; // Bold red flash
         if (isActive) return isDarkMode ? '#ffffff' : '#1e293b';
         return isDarkMode ? '#243042' : '#ffffff';
     };
 
     const getBorderColor = () => {
-        if (flashOutcome === 'win') return '#16a34a';
-        if (flashOutcome === 'lose') return '#dc2626';
+        if (flashOutcome === 'win') return '#00ff55';
+        if (flashOutcome === 'lose') return '#ff003c';
         if (isWinning) return '#14b8a6'; // Teal border for target digits
         return isDarkMode ? '#334155' : '#e2e8f0';
     };
@@ -142,18 +143,20 @@ const DigitCircle = ({
 
     // Pointer triangle colour
     const pointerColor = flashOutcome === 'win'
-        ? '#16a34a'
+        ? '#00ff55'
         : flashOutcome === 'lose'
-        ? '#dc2626'
+        ? '#ff003c'
         : isWinning
         ? '#14b8a6'
         : '#ef4444';
 
     const boxShadow = flashOutcome === 'win'
-        ? '0 0 14px rgba(34, 197, 94, 0.55)'
+        ? '0px 0px 15px rgba(0, 255, 85, 0.6)'
         : flashOutcome === 'lose'
-        ? '0 0 14px rgba(239, 68, 68, 0.55)'
+        ? '0px 0px 15px rgba(255, 0, 60, 0.6)'
         : '0 1px 3px rgba(0,0,0,0.1)';
+
+    const scale = flashOutcome ? 'scale(1.2)' : 'scale(1)';
 
     return (
         <div
@@ -167,8 +170,28 @@ const DigitCircle = ({
                 margin: isMobile ? '0 6px' : '0 2px',
                 cursor: 'pointer',
                 pointerEvents: 'auto',
+                zIndex: flashOutcome ? 10 : 1, // ensure scaled element is on top
             }}
         >
+            {/* Top Badge */}
+            {flashOutcome && flashPrice && (
+                <div style={{
+                    position: 'absolute',
+                    top: isMobile ? '-20px' : '-20px',
+                    backgroundColor: flashOutcome === 'win' ? '#00ff55' : '#ff003c',
+                    color: '#ffffff',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                    zIndex: 2,
+                    whiteSpace: 'nowrap'
+                }}>
+                    {flashPrice}
+                </div>
+            )}
+            
             <div
                 style={{
                     display: 'flex',
@@ -180,6 +203,7 @@ const DigitCircle = ({
                     borderBottomColor: getBottomBorderColor(),
                     backgroundColor: getBgColor(),
                     boxShadow,
+                    transform: scale,
                     transition: 'all 0.25s ease',
                     width: size,
                     height: size,
@@ -208,7 +232,7 @@ const DigitCircle = ({
                     {percentage.toFixed(1).replace(/\.0$/, '')}%
                 </span>
             </div>
-            {isLatest && (
+            {(isLatest || flashOutcome) && (
                 <div
                     style={{
                         position: 'absolute',
@@ -220,7 +244,7 @@ const DigitCircle = ({
                         borderLeft: '5px solid transparent',
                         borderRight: '5px solid transparent',
                         borderBottom: `6px solid ${pointerColor}`,
-                        animation: 'digit-bounce 0.6s ease infinite alternate',
+                        animation: flashOutcome ? 'none' : 'digit-bounce 0.6s ease infinite alternate',
                     }}
                 />
             )}
@@ -366,7 +390,7 @@ const TradeChart = observer(() => {
         filtered_positions &&
         filtered_positions.filter(position => position.contract_info?.is_sold).map(p => p.contract_info.contract_id);
 
-    const [flashDigit, setFlashDigit] = React.useState<{ digit: number; outcome: 'win' | 'lose' } | null>(null);
+    const [flashDigit, setFlashDigit] = React.useState<{ digit: number; outcome: 'win' | 'lose'; price: string } | null>(null);
 
     // Automatically remove closed positions after 8 seconds and flash the result for 1.5s
     React.useEffect(() => {
@@ -384,9 +408,10 @@ const TradeChart = observer(() => {
                     const exitDigit = info.exit_tick_display_value 
                         ? parseInt(info.exit_tick_display_value.toString().slice(-1)) 
                         : null;
+                    const price = info.exit_tick_display_value ? info.exit_tick_display_value.toString() : '';
                     
                     if (exitDigit !== null && !isNaN(exitDigit)) {
-                        setFlashDigit({ digit: exitDigit, outcome: Number(profit) >= 0 ? 'win' : 'lose' });
+                        setFlashDigit({ digit: exitDigit, outcome: Number(profit) >= 0 ? 'win' : 'lose', price });
                         setTimeout(() => {
                             setFlashDigit(prev => (prev?.digit === exitDigit ? null : prev));
                         }, 1000); // 1 second flash
@@ -602,6 +627,7 @@ const TradeChart = observer(() => {
                                     isActive={digit === last_digit}
                                     isWinning={is_winning}
                                     flashOutcome={flashDigit?.digit === digit ? flashDigit.outcome : null}
+                                    flashPrice={flashDigit?.digit === digit ? flashDigit.price : null}
                                     onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                 />
                             );
@@ -624,6 +650,7 @@ const TradeChart = observer(() => {
                                     isActive={digit === last_digit}
                                     isWinning={is_winning}
                                     flashOutcome={flashDigit?.digit === digit ? flashDigit.outcome : null}
+                                    flashPrice={flashDigit?.digit === digit ? flashDigit.price : null}
                                     onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                 />
                             );
@@ -688,6 +715,7 @@ const TradeChart = observer(() => {
                                         isActive={digit === last_digit}
                                         isWinning={is_winning}
                                         flashOutcome={flashDigit?.digit === digit ? flashDigit.outcome : null as any}
+                                        flashPrice={flashDigit?.digit === digit ? flashDigit.price : null}
                                         onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                     />
                                 );
