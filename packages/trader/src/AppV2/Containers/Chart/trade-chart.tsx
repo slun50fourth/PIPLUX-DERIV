@@ -39,25 +39,23 @@ const isWinningDigit = (
     last_digit?: number
 ): boolean => {
     const type = (trade_type_tab || contract_type || '').toUpperCase();
-    const target = last_digit !== undefined && last_digit !== null ? Number(last_digit) : undefined;
-    
     if (type.includes('OVER') && !type.includes('UNDER')) {
-        return target !== undefined && digit > target;
+        return last_digit !== undefined && last_digit !== null && digit > last_digit;
     }
     if (type === 'DIGITOVER_UNDER' || type === 'OVER_UNDER') {
-        return target !== undefined && digit > target;
+        return last_digit !== undefined && last_digit !== null && digit > last_digit;
     }
     if (type.includes('UNDER')) {
-        return target !== undefined && digit < target;
+        return last_digit !== undefined && last_digit !== null && digit < last_digit;
     }
     if (type.includes('MATCH') && !type.includes('DIFF')) {
-        return target !== undefined && digit === target;
+        return last_digit !== undefined && last_digit !== null && digit === last_digit;
     }
     if (type === 'DIGITMATCH_DIFF' || type === 'MATCH_DIFF') {
-        return target !== undefined && digit === target;
+        return last_digit !== undefined && last_digit !== null && digit === last_digit;
     }
     if (type.includes('DIFF')) {
-        return target !== undefined && digit !== target;
+        return last_digit !== undefined && last_digit !== null && digit !== last_digit;
     }
     if (type.includes('EVEN') && !type.includes('ODD')) {
         return digit % 2 === 0;
@@ -71,6 +69,7 @@ const isWinningDigit = (
     return false;
 };
 
+// Overlay component that renders digit circles with a bouncing cursor
 const DigitCircle = ({
     digit,
     percentage,
@@ -81,8 +80,6 @@ const DigitCircle = ({
     isMobile,
     isActive,
     isWinning,
-    flashOutcome,
-    flashPrice,
     hasActiveContract,
     onClick,
 }: {
@@ -95,70 +92,83 @@ const DigitCircle = ({
     isMobile?: boolean;
     isActive: boolean;
     isWinning?: boolean;
-    flashOutcome?: 'win' | 'lose' | null;
-    flashPrice?: string | null;
     hasActiveContract?: boolean;
     onClick?: () => void;
 }) => {
+    // Determine visual state for the latest-tick digit during a live contract
+    const latestWinState: 'win' | 'lose' | 'neutral' | 'none' = (() => {
+        if (!isLatest) return 'none';
+        if (!hasActiveContract) return 'neutral';
+        return isWinning ? 'win' : 'lose';
+    })();
+
     // Latest-tick digit is rendered slightly larger so it stands out
     const size = isMobile
         ? isLatest ? '54px' : '46px'
         : isLatest ? '46px' : '40px';
 
     const getBottomBorderColor = () => {
-        if (flashOutcome === 'win') return '#00ff55';
-        if (flashOutcome === 'lose') return '#ff003c';
+        if (latestWinState === 'win') return '#14b8a6';
+        if (latestWinState === 'lose') return '#ef4444';
         if (isMin) return '#ef4444'; // red for least frequent
         if (isMax) return '#14b8a6'; // teal/green for most frequent
-        if (isWinning) return '#14b8a6'; // Teal border for target digits
+        if (isWinning) return '#22c55e'; // green for winning digit
         return isDarkMode ? '#475569' : '#cbd5e1';
     };
 
     const getBgColor = () => {
-        if (flashOutcome === 'win') return '#00ff55'; // Bold green flash
-        if (flashOutcome === 'lose') return '#ff003c'; // Bold red flash
+        if (latestWinState === 'win') return '#14b8a6';  // teal – live contract winning
+        if (latestWinState === 'lose') return '#ef4444'; // red  – live contract losing
+        if (latestWinState === 'neutral') return isDarkMode ? '#334155' : '#94a3b8';
+        if (isActive && isWinning) return '#22c55e';
         if (isActive) return isDarkMode ? '#ffffff' : '#1e293b';
+        if (isWinning) return isDarkMode ? 'rgba(34, 197, 94, 0.15)' : '#f0fdf4';
         return isDarkMode ? '#243042' : '#ffffff';
     };
 
     const getBorderColor = () => {
-        if (flashOutcome === 'win') return '#00ff55';
-        if (flashOutcome === 'lose') return '#ff003c';
-        if (isWinning) return '#14b8a6'; // Teal border for target digits
+        if (latestWinState === 'win') return '#0d9488';
+        if (latestWinState === 'lose') return '#dc2626';
+        if (latestWinState === 'neutral') return isDarkMode ? '#475569' : '#94a3b8';
+        if (isActive && isWinning) return '#16a34a';
+        if (isWinning) return '#22c55e';
         return isDarkMode ? '#334155' : '#e2e8f0';
     };
 
     const getTextColor = () => {
-        if (flashOutcome) return '#ffffff';
+        if (latestWinState !== 'none') return '#ffffff';
+        if (isActive && isWinning) return '#ffffff';
         if (isActive) return isDarkMode ? '#1e293b' : '#ffffff';
+        if (isWinning) return isDarkMode ? '#4ade80' : '#15803d';
         return isDarkMode ? '#f1f5f9' : '#1e293b';
     };
 
     const getPercentColor = () => {
-        if (flashOutcome === 'win') return '#f0fdf4';
-        if (flashOutcome === 'lose') return '#fef2f2';
+        if (latestWinState !== 'none') return 'rgba(255,255,255,0.82)';
+        if (isActive && isWinning) return '#f0fdf4';
         if (isActive) return isDarkMode ? '#475569' : '#e2e8f0';
         if (isMin) return '#ef4444';
         if (isMax) return '#14b8a6';
+        if (isWinning) return isDarkMode ? '#86efac' : '#16a34a';
         return isDarkMode ? '#94a3b8' : '#64748b';
     };
 
-    // Pointer triangle colour
-    const pointerColor = flashOutcome === 'win'
-        ? '#00ff55'
-        : flashOutcome === 'lose'
-        ? '#ff003c'
-        : isWinning
-        ? '#14b8a6'
-        : '#ef4444';
+    // Pointer triangle colour matches the contract outcome (win=teal, lose=red, no contract=slate)
+    const pointerColor =
+        latestWinState === 'win'
+            ? '#14b8a6'
+            : latestWinState === 'lose'
+            ? '#ef4444'
+            : '#94a3b8';
 
-    const boxShadow = flashOutcome === 'win'
-        ? '0px 0px 15px rgba(0, 255, 85, 0.6)'
-        : flashOutcome === 'lose'
-        ? '0px 0px 15px rgba(255, 0, 60, 0.6)'
-        : '0 1px 3px rgba(0,0,0,0.1)';
-
-    const scale = flashOutcome ? 'scale(1.2)' : 'scale(1)';
+    const boxShadow =
+        latestWinState === 'win'
+            ? '0 0 14px rgba(20, 184, 166, 0.55)'
+            : latestWinState === 'lose'
+            ? '0 0 14px rgba(239, 68, 68, 0.55)'
+            : isWinning
+            ? '0 0 8px rgba(34, 197, 94, 0.3)'
+            : '0 1px 3px rgba(0,0,0,0.1)';
 
     return (
         <div
@@ -172,28 +182,8 @@ const DigitCircle = ({
                 margin: isMobile ? '0 6px' : '0 2px',
                 cursor: 'pointer',
                 pointerEvents: 'auto',
-                zIndex: flashOutcome ? 10 : 1, // ensure scaled element is on top
             }}
         >
-            {/* Top Badge */}
-            {flashOutcome && flashPrice && (
-                <div style={{
-                    position: 'absolute',
-                    top: isMobile ? '-20px' : '-20px',
-                    backgroundColor: flashOutcome === 'win' ? '#00ff55' : '#ff003c',
-                    color: '#ffffff',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                    zIndex: 2,
-                    whiteSpace: 'nowrap'
-                }}>
-                    {flashPrice}
-                </div>
-            )}
-            
             <div
                 style={{
                     display: 'flex',
@@ -205,7 +195,6 @@ const DigitCircle = ({
                     borderBottomColor: getBottomBorderColor(),
                     backgroundColor: getBgColor(),
                     boxShadow,
-                    transform: scale,
                     transition: 'all 0.25s ease',
                     width: size,
                     height: size,
@@ -234,7 +223,7 @@ const DigitCircle = ({
                     {percentage.toFixed(1).replace(/\.0$/, '')}%
                 </span>
             </div>
-            {(flashOutcome || (hasActiveContract && isLatest)) && (
+            {isLatest && (
                 <div
                     style={{
                         position: 'absolute',
@@ -246,7 +235,7 @@ const DigitCircle = ({
                         borderLeft: '5px solid transparent',
                         borderRight: '5px solid transparent',
                         borderBottom: `6px solid ${pointerColor}`,
-                        animation: flashOutcome ? 'none' : 'digit-bounce 0.6s ease infinite alternate',
+                        animation: 'digit-bounce 0.6s ease infinite alternate',
                     }}
                 />
             )}
@@ -392,13 +381,7 @@ const TradeChart = observer(() => {
         filtered_positions &&
         filtered_positions.filter(position => position.contract_info?.is_sold).map(p => p.contract_info.contract_id);
 
-    const hasActiveContract = Boolean(
-        filtered_positions && filtered_positions.some(p => !p.contract_info?.is_sold)
-    );
-
-    const [flashDigit, setFlashDigit] = React.useState<{ digit: number; outcome: 'win' | 'lose'; price: string } | null>(null);
-
-    // Automatically remove closed positions after 8 seconds and flash the result for 1.5s
+    // Automatically remove closed positions after 8 seconds
     React.useEffect(() => {
         const timeoutsMap = timeoutsMapRef.current;
         const currentClosedIds = new Set(closed_positions_ids);
@@ -406,24 +389,6 @@ const TradeChart = observer(() => {
         // Start timers for newly closed positions
         closed_positions_ids.forEach(positionId => {
             if (!timeoutsMap.has(Number(positionId))) {
-                // Flash the outcome on the specific exit digit
-                const closedPosition = filtered_positions.find(p => p.contract_info.contract_id === positionId);
-                if (closedPosition && closedPosition.contract_info) {
-                    const info = closedPosition.contract_info as any;
-                    const profit = info.profit ?? 0;
-                    const exitDigit = info.exit_tick_display_value 
-                        ? parseInt(info.exit_tick_display_value.toString().slice(-1)) 
-                        : null;
-                    const price = info.exit_tick_display_value ? info.exit_tick_display_value.toString() : '';
-                    
-                    if (exitDigit !== null && !isNaN(exitDigit)) {
-                        setFlashDigit({ digit: exitDigit, outcome: Number(profit) >= 0 ? 'win' : 'lose', price });
-                        setTimeout(() => {
-                            setFlashDigit(prev => (prev?.digit === exitDigit ? null : prev));
-                        }, 1000); // 1 second flash
-                    }
-                }
-
                 const timeout = setTimeout(() => {
                     onClickRemove(positionId);
                     timeoutsMap.delete(Number(positionId));
@@ -512,6 +477,18 @@ const TradeChart = observer(() => {
     const minVal = processedStats.length ? Math.min(...processedStats) : -1;
     const maxVal = processedStats.length ? Math.max(...processedStats) : -1;
     const hasData = processedStats.some((v: number) => v > 0);
+
+    // Only show winning-digit highlights while a digit contract is live (placed but not yet sold).
+    // Use all_positions directly – bypasses isContractSupportedAndStarted which returns false
+    // for newly placed real-account trades, causing the initial highlight to lag until refresh.
+    const has_active_contract =
+        isDigitsMarket &&
+        all_positions.some(p => {
+            const info = p.contract_info as any;
+            if (!info || info.is_sold) return false;
+            if (info.underlying !== symbol) return false;
+            return true;
+        });
 
     return (
         <>
@@ -619,7 +596,7 @@ const TradeChart = observer(() => {
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', width: '100%' }}>
                         {processedStats.slice(0, 5).map((percentage: number, idx: number) => {
                             const digit = idx;
-                            const is_winning = isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
+                            const is_winning = has_active_contract && isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
                             return (
                                 <DigitCircle
                                     key={digit}
@@ -632,9 +609,7 @@ const TradeChart = observer(() => {
                                     isMobile={true}
                                     isActive={digit === last_digit}
                                     isWinning={is_winning}
-                                    flashOutcome={flashDigit?.digit === digit ? flashDigit.outcome : null}
-                                    flashPrice={flashDigit?.digit === digit ? flashDigit.price : null}
-                                    hasActiveContract={hasActiveContract}
+                                    hasActiveContract={has_active_contract}
                                     onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                 />
                             );
@@ -643,7 +618,7 @@ const TradeChart = observer(() => {
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', width: '100%' }}>
                         {processedStats.slice(5, 10).map((percentage: number, idx: number) => {
                             const digit = idx + 5;
-                            const is_winning = isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
+                            const is_winning = has_active_contract && isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
                             return (
                                 <DigitCircle
                                     key={digit}
@@ -656,9 +631,6 @@ const TradeChart = observer(() => {
                                     isMobile={true}
                                     isActive={digit === last_digit}
                                     isWinning={is_winning}
-                                    flashOutcome={flashDigit?.digit === digit ? flashDigit.outcome : null}
-                                    flashPrice={flashDigit?.digit === digit ? flashDigit.price : null}
-                                    hasActiveContract={hasActiveContract}
                                     onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                 />
                             );
@@ -709,7 +681,7 @@ const TradeChart = observer(() => {
                             }}
                         >
                             {processedStats.map((percentage: number, digit: number) => {
-                                const is_winning = isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
+                                const is_winning = has_active_contract && isWinningDigit(digit, contract_type, trade_type_tab, last_digit);
                                 return (
                                     <DigitCircle
                                         key={digit}
@@ -722,9 +694,7 @@ const TradeChart = observer(() => {
                                         isMobile={false}
                                         isActive={digit === last_digit}
                                         isWinning={is_winning}
-                                        flashOutcome={flashDigit?.digit === digit ? flashDigit.outcome : null as any}
-                                        flashPrice={flashDigit?.digit === digit ? flashDigit.price : null}
-                                        hasActiveContract={hasActiveContract}
+                                        hasActiveContract={has_active_contract}
                                         onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                     />
                                 );
