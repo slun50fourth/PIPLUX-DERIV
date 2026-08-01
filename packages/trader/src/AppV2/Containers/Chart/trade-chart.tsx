@@ -129,7 +129,7 @@ const DigitCircle = ({
         if (latestWinState === 'lose') return '#ef4444';
         if (latestWinState === 'neutral') return isDarkMode ? '#334155' : '#94a3b8';
         if (showWinHighlight) return '#22c55e';
-        if (showLoseHighlight) return 'rgba(239, 68, 68, 0.25)';
+        if (showLoseHighlight) return '#ef4444'; // Bold red
         if (isActive) return isDarkMode ? '#ffffff' : '#1e293b';
         return isDarkMode ? '#243042' : '#ffffff';
     };
@@ -146,7 +146,7 @@ const DigitCircle = ({
     const getTextColor = () => {
         if (latestWinState !== 'none') return '#ffffff';
         if (showWinHighlight) return '#ffffff';
-        if (showLoseHighlight) return isDarkMode ? '#fca5a5' : '#dc2626';
+        if (showLoseHighlight) return '#ffffff';
         if (isActive) return isDarkMode ? '#1e293b' : '#ffffff';
         return isDarkMode ? '#f1f5f9' : '#1e293b';
     };
@@ -154,7 +154,7 @@ const DigitCircle = ({
     const getPercentColor = () => {
         if (latestWinState !== 'none') return 'rgba(255,255,255,0.82)';
         if (showWinHighlight) return '#f0fdf4';
-        if (showLoseHighlight) return isDarkMode ? '#fca5a5' : '#dc2626';
+        if (showLoseHighlight) return '#fef2f2';
         if (isActive) return isDarkMode ? '#475569' : '#e2e8f0';
         if (isMin) return '#ef4444';
         if (isMax) return '#14b8a6';
@@ -502,13 +502,14 @@ const TradeChart = observer(() => {
 
     const has_active_contract = !!active_digit_contract;
 
-    // Determine if the live contract is currently winning or losing based on profit
+    // Determine if the live contract is currently winning or losing based on the latest tick
     const active_contract_outcome: 'win' | 'lose' | 'none' = (() => {
-        if (!active_digit_contract) return 'none';
-        const info = active_digit_contract.contract_info as any;
-        if (!info) return 'none';
-        const profit = info.profit ?? 0;
-        return profit >= 0 ? 'win' : 'lose';
+        if (!active_digit_contract || latestDigit === null) return 'none';
+        
+        // Use the latest digit to determine if the contract is currently winning
+        const is_currently_winning = isWinningDigit(latestDigit, contract_type, trade_type_tab, last_digit);
+        
+        return is_currently_winning ? 'win' : 'lose';
     })();
 
     return (
