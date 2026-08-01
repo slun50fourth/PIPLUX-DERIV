@@ -92,6 +92,46 @@ const App = ({ root_store }) => {
         }
     }, [isBridgeAvailable, sendBridgeEvent]);
 
+    // Pull to refresh logic for mobile browsers/PWA
+    React.useEffect(() => {
+        let touchStartY = 0;
+        let isAtTop = false;
+
+        const handleTouchStart = (e) => {
+            touchStartY = e.touches[0].clientY;
+            
+            // Find the closest scrollable container
+            const path = e.composedPath();
+            const scrollableNode = path.find(node => {
+                if (!(node instanceof Element)) return false;
+                const style = window.getComputedStyle(node);
+                return (style.overflowY === 'auto' || style.overflowY === 'scroll') && node.scrollHeight > node.clientHeight;
+            });
+
+            if (scrollableNode) {
+                isAtTop = scrollableNode.scrollTop === 0;
+            } else {
+                isAtTop = true;
+            }
+        };
+
+        const handleTouchEnd = (e) => {
+            const touchEndY = e.changedTouches[0].clientY;
+            // Only trigger if pulled down significantly (> 150px) while at the top
+            if (isAtTop && (touchEndY - touchStartY) > 150) {
+                window.location.reload();
+            }
+        };
+
+        window.addEventListener('touchstart', handleTouchStart, { passive: true });
+        window.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+        return () => {
+            window.removeEventListener('touchstart', handleTouchStart);
+            window.removeEventListener('touchend', handleTouchEnd);
+        };
+    }, []);
+
     React.useEffect(() => {
         sessionStorage.removeItem('redirect_url');
         const loadSmartchartsStyles = () => {
