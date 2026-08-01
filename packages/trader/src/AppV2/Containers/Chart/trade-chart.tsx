@@ -39,23 +39,25 @@ const isWinningDigit = (
     last_digit?: number
 ): boolean => {
     const type = (trade_type_tab || contract_type || '').toUpperCase();
+    const target = last_digit !== undefined && last_digit !== null ? Number(last_digit) : undefined;
+    
     if (type.includes('OVER') && !type.includes('UNDER')) {
-        return last_digit !== undefined && last_digit !== null && digit > last_digit;
+        return target !== undefined && digit > target;
     }
     if (type === 'DIGITOVER_UNDER' || type === 'OVER_UNDER') {
-        return last_digit !== undefined && last_digit !== null && digit > last_digit;
+        return target !== undefined && digit > target;
     }
     if (type.includes('UNDER')) {
-        return last_digit !== undefined && last_digit !== null && digit < last_digit;
+        return target !== undefined && digit < target;
     }
     if (type.includes('MATCH') && !type.includes('DIFF')) {
-        return last_digit !== undefined && last_digit !== null && digit === last_digit;
+        return target !== undefined && digit === target;
     }
     if (type === 'DIGITMATCH_DIFF' || type === 'MATCH_DIFF') {
-        return last_digit !== undefined && last_digit !== null && digit === last_digit;
+        return target !== undefined && digit === target;
     }
     if (type.includes('DIFF')) {
-        return last_digit !== undefined && last_digit !== null && digit !== last_digit;
+        return target !== undefined && digit !== target;
     }
     if (type.includes('EVEN') && !type.includes('ODD')) {
         return digit % 2 === 0;
@@ -495,7 +497,7 @@ const TradeChart = observer(() => {
         ? all_positions.find(p => {
               const info = p.contract_info as any;
               if (!info || info.is_sold) return false;
-              if (info.underlying !== symbol) return false;
+              if (info.underlying !== symbol && info.underlying_symbol !== symbol) return false;
               return true;
           })
         : undefined;
