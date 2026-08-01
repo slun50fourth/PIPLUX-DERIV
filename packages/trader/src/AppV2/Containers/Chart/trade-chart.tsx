@@ -83,6 +83,7 @@ const DigitCircle = ({
     isWinning,
     flashOutcome,
     flashPrice,
+    hasActiveContract,
     onClick,
 }: {
     digit: number;
@@ -96,6 +97,7 @@ const DigitCircle = ({
     isWinning?: boolean;
     flashOutcome?: 'win' | 'lose' | null;
     flashPrice?: string | null;
+    hasActiveContract?: boolean;
     onClick?: () => void;
 }) => {
     // Latest-tick digit is rendered slightly larger so it stands out
@@ -232,7 +234,7 @@ const DigitCircle = ({
                     {percentage.toFixed(1).replace(/\.0$/, '')}%
                 </span>
             </div>
-            {(isLatest || flashOutcome) && (
+            {(flashOutcome || (hasActiveContract && isLatest)) && (
                 <div
                     style={{
                         position: 'absolute',
@@ -389,6 +391,10 @@ const TradeChart = observer(() => {
     const closed_positions_ids =
         filtered_positions &&
         filtered_positions.filter(position => position.contract_info?.is_sold).map(p => p.contract_info.contract_id);
+
+    const hasActiveContract = Boolean(
+        filtered_positions && filtered_positions.some(p => !p.contract_info?.is_sold)
+    );
 
     const [flashDigit, setFlashDigit] = React.useState<{ digit: number; outcome: 'win' | 'lose'; price: string } | null>(null);
 
@@ -628,6 +634,7 @@ const TradeChart = observer(() => {
                                     isWinning={is_winning}
                                     flashOutcome={flashDigit?.digit === digit ? flashDigit.outcome : null}
                                     flashPrice={flashDigit?.digit === digit ? flashDigit.price : null}
+                                    hasActiveContract={hasActiveContract}
                                     onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                 />
                             );
@@ -651,6 +658,7 @@ const TradeChart = observer(() => {
                                     isWinning={is_winning}
                                     flashOutcome={flashDigit?.digit === digit ? flashDigit.outcome : null}
                                     flashPrice={flashDigit?.digit === digit ? flashDigit.price : null}
+                                    hasActiveContract={hasActiveContract}
                                     onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                 />
                             );
@@ -716,6 +724,7 @@ const TradeChart = observer(() => {
                                         isWinning={is_winning}
                                         flashOutcome={flashDigit?.digit === digit ? flashDigit.outcome : null as any}
                                         flashPrice={flashDigit?.digit === digit ? flashDigit.price : null}
+                                        hasActiveContract={hasActiveContract}
                                         onClick={() => onChange({ target: { name: 'last_digit', value: digit } })}
                                     />
                                 );
