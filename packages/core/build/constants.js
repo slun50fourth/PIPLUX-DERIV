@@ -48,7 +48,10 @@ const HOISTED_PACKAGES = {
     '@deriv/reports': path.resolve(__dirname, '../../../node_modules/@deriv/reports'),
 };
 
+const BOTS_DIR = path.resolve(__dirname, '../../../bots');
+
 const ALIASES = {
+    Bots: BOTS_DIR,
     _common: path.resolve(__dirname, '../src/_common'),
     App: path.resolve(__dirname, '../src/App'),
     Assets: path.resolve(__dirname, '../src/Assets'),
@@ -76,7 +79,7 @@ const rules = (is_test_env = false) => [
     {
         test: /\.(js|jsx|ts|tsx)$/,
         exclude: is_test_env ? /node_modules/ : /node_modules|__tests__/,
-        include: is_test_env ? /__tests__|src/ : /src/,
+        include: is_test_env ? [/__tests__|src/, BOTS_DIR] : [/src/, BOTS_DIR],
         use: js_loaders,
     },
     {

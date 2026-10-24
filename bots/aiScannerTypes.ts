@@ -133,10 +133,20 @@ export interface ProAiConfig {
 /** Callbacks provided by the UI layer to receive Pro AI events. */
 export interface ProAiCallbacks {
   onScanComplete?: (setup: ProAiSetup) => void;
-  onEntry?: (digit: number) => void;
-  onTradeResult?: (won: boolean, profit: number, balance: number) => void;
+  onTick?: (digit: number, price: number) => void;
+  onEntry?: (digit: number, contract: ContractSpec, stake: number) => void;
+  onTradeResult?: (won: boolean, profit: number, balance: number, consecutiveWins: number) => void;
   onRecovery?: (spec: ContractSpec, stake: number) => void;
   onSessionEnd?: (reason: 'takeProfit' | 'stopLoss' | 'stopped' | 'error', pnl: number) => void;
+  onError?: (err: Error) => void;
+}
+
+/** Callbacks for Entry Scanner live execution session. */
+export interface EntryScannerCallbacks {
+  onTick?: (digit: number, price: number) => void;
+  onEntry?: (digit: number, contractType: string, barrier: number, stake: number, isRecovery: boolean) => void;
+  onTradeResult?: (won: boolean, profit: number, totalPnl: number, nextStake: number, consecutiveWins: number) => void;
+  onSessionEnd?: (reason: 'targetWins' | 'stopLoss' | 'stopped' | 'error', pnl: number) => void;
   onError?: (err: Error) => void;
 }
 

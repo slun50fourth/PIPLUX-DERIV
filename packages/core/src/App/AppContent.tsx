@@ -17,6 +17,7 @@ import Header from './Containers/Layout/header';
 import AppModals from './Containers/Modals';
 import Routes from './Containers/Routes/routes.jsx';
 import Devtools from './Devtools';
+import AiScannerModal from './Components/Elements/AiScanner';
 
 const AppContent: React.FC<{ passthrough: any }> = observer(({ passthrough }) => {
     const store = useStore();
@@ -76,6 +77,7 @@ const AppContent: React.FC<{ passthrough: any }> = observer(({ passthrough }) =>
             </ErrorBoundary>
             <AppToastMessages />
             <Devtools />
+            <AiScannerModal />
         </ThemeProvider>
     );
 });
