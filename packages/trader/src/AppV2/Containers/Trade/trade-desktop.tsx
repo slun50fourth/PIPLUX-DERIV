@@ -37,7 +37,7 @@ const TradeDesktop = observer(() => {
     const {
         client,
         common: { current_language, network_status },
-        ui: { is_dark_mode_on, active_sidebar_flyout },
+        ui: { is_dark_mode_on, active_sidebar_flyout, setSidebarFlyout },
     } = useStore();
     const { is_logged_in } = client;
     const {
@@ -132,6 +132,15 @@ const TradeDesktop = observer(() => {
                             trade_types={trade_types}
                             is_dark_mode_on={is_dark_mode_on}
                         />
+                        <button
+                            type='button'
+                            className='trade__ai-scanner-btn'
+                            onClick={() => setSidebarFlyout(active_sidebar_flyout === 'ai_scanner' ? null : 'ai_scanner')}
+                            style={{ margin: '0 12px' }}
+                        >
+                            <span className='trade__ai-scanner-pulse' />
+                            AI Scanner
+                        </button>
                         <AccountHeader />
                     </div>
                     {/* Commented out to use chart's native market selector instead */}

@@ -13,7 +13,7 @@ export default class UIStore extends BaseStore {
     is_reports_visible = false;
     reports_route_tab_index = 0;
     is_history_tab_active = false;
-    active_sidebar_flyout = null; // 'theme' | 'language' | 'positions' | 'account' | null
+    active_sidebar_flyout = null; // 'theme' | 'language' | 'positions' | 'account' | 'ai_scanner' | null
     // TODO: [cleanup ui-store]
     // Take profit, Stop loss & Deal cancellation checkbox
     should_show_cancellation_warning = true;

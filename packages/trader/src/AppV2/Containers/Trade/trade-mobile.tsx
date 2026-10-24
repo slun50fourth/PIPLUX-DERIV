@@ -30,7 +30,7 @@ const Trade = observer(() => {
     const {
         client,
         common: { current_language, network_status },
-        ui: { is_dark_mode_on },
+        ui: { is_dark_mode_on, setSidebarFlyout },
         contract_trade,
     } = useStore();
     const { is_logged_in } = client;
@@ -122,6 +122,15 @@ const Trade = observer(() => {
                         />
                         <div className='trade__market-selector-guide'>
                             <MarketSelector />
+                            <button
+                                type='button'
+                                className='trade__ai-scanner-btn'
+                                onClick={() => setSidebarFlyout('ai_scanner')}
+                                aria-label='AI Scanner'
+                            >
+                                <span className='trade__ai-scanner-pulse' />
+                                AI Scanner
+                            </button>
                             <Guide show_guide_for_selected_contract />
                         </div>
                         {isDigitTradeType(contract_type) && <CurrentSpot />}

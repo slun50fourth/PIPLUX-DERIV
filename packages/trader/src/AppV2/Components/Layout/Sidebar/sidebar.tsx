@@ -15,6 +15,7 @@ import {
     StandaloneGlobeFillIcon,
     StandaloneGlobeRegularIcon,
     StandaloneMoonRegularIcon,
+    StandaloneSearchBoldIcon,
     StandaloneSunBrightRegularIcon,
 } from '@deriv/quill-icons';
 // [AI]
@@ -32,6 +33,7 @@ import { observer, useStore } from '@deriv/stores';
 import { Localize, localize, useTranslations } from '@deriv-com/translations';
 
 import { PositionsDrawerContent, PositionsDrawerFooter } from './PositionsDrawer';
+import { AiScannerDrawerContent } from 'AppV2/Components/AiScannerDrawer';
 
 import AccountSelector from './account-selector';
 import LanguageSelector from './language-selector';
@@ -85,6 +87,10 @@ const Sidebar = observer(() => {
         setSidebarFlyout(active_sidebar_flyout === 'account' ? null : 'account');
     };
 
+    const handleAiScannerToggle = () => {
+        setSidebarFlyout(active_sidebar_flyout === 'ai_scanner' ? null : 'ai_scanner');
+    };
+
     const handlePositionsToggle = () => {
         setSidebarFlyout(active_sidebar_flyout === 'positions' ? null : 'positions');
     };
@@ -112,6 +118,7 @@ const Sidebar = observer(() => {
 
     // Main navigation items
     const isPositionsActive = active_sidebar_flyout === 'positions';
+    const isAiScannerActive = active_sidebar_flyout === 'ai_scanner';
     const isReportsActive = isActiveRoute(routes.reports);
 
     const navigationItems: TSidebarItem[] = [
@@ -122,6 +129,19 @@ const Sidebar = observer(() => {
             onClick: handleHomeClick,
             isActive: false,
             dataTestId: 'dt_sidebar_home',
+        },
+        {
+            id: 'ai_scanner',
+            icon: (
+                <StandaloneSearchBoldIcon
+                    fill={isAiScannerActive ? 'var(--color-nav-item-active)' : 'var(--color-text-primary)'}
+                    iconSize='sm'
+                />
+            ),
+            label: localize('AI Scanner'),
+            onClick: handleAiScannerToggle,
+            isActive: isAiScannerActive,
+            dataTestId: 'dt_sidebar_ai_scanner',
         },
         {
             id: 'positions',
@@ -217,6 +237,12 @@ const Sidebar = observer(() => {
                 return {
                     title: <Localize i18n_default_text='Account' />,
                     content: <AccountSelector />,
+                    footer: null,
+                };
+                        case 'ai_scanner':
+                return {
+                    title: <Localize i18n_default_text='AI Market Scanner' />,
+                    content: <AiScannerDrawerContent onClose={closeFlyout} />,
                     footer: null,
                 };
             case 'positions':
