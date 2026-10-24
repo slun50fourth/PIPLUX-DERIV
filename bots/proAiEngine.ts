@@ -310,12 +310,18 @@ export class ProAiSession {
         { ticks: symbol },
         msg => {
           if (this.stopped) { sub.unsubscribe(); resolve(STOP_SIGNAL); return; }
-          const raw   = msg?.tick?.quote;
+          const raw   = msg?.tick?.quote ?? (msg as any)?.quote;
           const epoch = msg?.tick?.epoch ?? 0;
           if (raw === undefined) return;
           const price = parsePrice(raw);
           if (price === null) return;
-          const digit = extractLastDigit(price, pipSize);
+          const currentPipSize = (msg as any)?.tick?.pip_size ?? pipSize;
+          const digit = extractLastDigit(price, currentPipSize);
+          if (digit === null) return;
+
+          // Notify live UI of current tick
+          this.callbacks.onTick?.(digit, price);
+
           if (digit !== entryDigit) return;
 
           sub.unsubscribe();
@@ -353,6 +359,7 @@ export class ProAiSession {
         duration: 1,
         duration_unit: 't',
         symbol,
+        underlying_symbol: symbol,
       };
       if (spec.barrier !== undefined) params.barrier = String(spec.barrier);
 
@@ -390,24 +397,65 @@ export class ProAiSession {
     return new Promise((resolve, reject) => {
       if (this.stopped) { reject(new SessionStopped()); return; }
 
+      let resolved = false;
+      let timer: any = null;
+
+      const finish = (won: boolean, profit: number) => {
+        if (resolved) return;
+        resolved = true;
+        if (timer) clearTimeout(timer);
+        try { sub?.unsubscribe?.(); } catch {}
+        resolve({ won, profit });
+      };
+
+      const fail = (err: Error) => {
+        if (resolved) return;
+        resolved = true;
+        if (timer) clearTimeout(timer);
+        try { sub?.unsubscribe?.(); } catch {}
+        reject(err);
+      };
+
       const sub = this.api.subscribe<{
         proposal_open_contract?: {
           is_sold?: number;
           profit?: number;
           status?: string;
+          is_expired?: number;
         };
+        error?: { message?: string };
       }>(
         { proposal_open_contract: 1, contract_id: contractId, subscribe: 1 },
         msg => {
+          if (msg?.error) {
+            fail(new Error(msg.error.message || 'Contract settlement error'));
+            return;
+          }
           const poc = msg?.proposal_open_contract;
-          if (!poc || !poc.is_sold) return;
-
-          sub.unsubscribe();
-          const won    = poc.status === 'won';
-          const profit = Number(poc.profit ?? 0);
-          resolve({ won, profit });
+          if (!poc) return;
+          if (poc.is_sold || poc.status === 'won' || poc.status === 'lost') {
+            const won = poc.status === 'won' || Number(poc.profit ?? 0) > 0;
+            const profit = Number(poc.profit ?? 0);
+            finish(won, profit);
+          }
         }
       );
+
+      // Fallback timer: 20s max for 1-tick contract
+      timer = setTimeout(async () => {
+        if (resolved) return;
+        try {
+          const oneOff = await this.api.send<{
+            proposal_open_contract?: { is_sold?: number; profit?: number; status?: string };
+          }>({ proposal_open_contract: 1, contract_id: contractId });
+          const poc = oneOff?.proposal_open_contract;
+          if (poc && (poc.is_sold || poc.status === 'won' || poc.status === 'lost')) {
+            finish(poc.status === 'won' || Number(poc.profit ?? 0) > 0, Number(poc.profit ?? 0));
+            return;
+          }
+        } catch {}
+        fail(new Error('Contract settlement timeout (20s)'));
+      }, 20000);
     });
   }
 
@@ -419,7 +467,11 @@ export class ProAiSession {
    * @param config   Session configuration
    * @param currency Account currency (e.g. "USD")
    */
-  async start(config: ProAiConfig = {}, currency = 'USD'): Promise<void> {
+  async start(
+    config: ProAiConfig = {},
+    currency = 'USD',
+    initialSetup?: ProAiSetup | null
+  ): Promise<void> {
     const cfg: Required<ProAiConfig> = {
       stake:      Math.max(0.01, config.stake      ?? DEFAULT_PRO_AI_CONFIG.stake),
       multiplier: Math.max(1,    config.multiplier ?? DEFAULT_PRO_AI_CONFIG.multiplier),
@@ -433,8 +485,8 @@ export class ProAiSession {
     let currentStake = cfg.stake;
 
     try {
-      // Initial market scan
-      let setup = await this.scan(cfg.ticks);
+      // Use pre-scanned setup if available, otherwise scan
+      let setup = initialSetup ?? (await this.scan(cfg.ticks));
       if (!setup) throw new Error('No suitable market found during initial scan.');
 
       while (!this.stopped) {
@@ -515,9 +567,10 @@ export function startProAi(
   config: ProAiConfig,
   callbacks: ProAiCallbacks,
   currency = 'USD',
+  initialSetup?: ProAiSetup | null
 ): ProAiSession {
   const session = new ProAiSession(api, callbacks);
-  session.start(config, currency).catch(err => {
+  session.start(config, currency, initialSetup).catch(err => {
     callbacks.onError?.(err instanceof Error ? err : new Error(String(err)));
   });
   return session;

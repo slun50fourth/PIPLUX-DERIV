@@ -577,11 +577,11 @@ export class EntryScannerSession {
               return;
             }
 
-            const raw = msg?.tick?.quote;
+            const raw = msg?.tick?.quote ?? (msg as any)?.quote;
             if (raw === undefined) return;
             const price = parsePrice(raw);
             if (price === null) return;
-            const pipSize = getPipSize(raw);
+            const pipSize = (msg as any)?.tick?.pip_size ?? getPipSize(raw);
             const lastDigit = extractLastDigit(price, pipSize);
             if (lastDigit === null) return;
 
@@ -615,6 +615,7 @@ export class EntryScannerSession {
                 duration: 1,
                 duration_unit: 't',
                 symbol: this.result.symbol,
+                underlying_symbol: this.result.symbol,
                 barrier: String(currentBarrier),
               };
 
@@ -720,24 +721,65 @@ export class EntryScannerSession {
     return new Promise((resolve, reject) => {
       if (this.stopped) { reject(new SessionAborted()); return; }
 
+      let resolved = false;
+      let timer: any = null;
+
+      const finish = (won: boolean, profit: number) => {
+        if (resolved) return;
+        resolved = true;
+        if (timer) clearTimeout(timer);
+        try { sub?.unsubscribe?.(); } catch {}
+        resolve({ won, profit });
+      };
+
+      const fail = (err: Error) => {
+        if (resolved) return;
+        resolved = true;
+        if (timer) clearTimeout(timer);
+        try { sub?.unsubscribe?.(); } catch {}
+        reject(err);
+      };
+
       const sub = this.api.subscribe<{
         proposal_open_contract?: {
           is_sold?: number;
           profit?: number;
           status?: string;
+          is_expired?: number;
         };
+        error?: { message?: string };
       }>(
         { proposal_open_contract: 1, contract_id: contractId, subscribe: 1 },
         msg => {
+          if (msg?.error) {
+            fail(new Error(msg.error.message || 'Contract settlement error'));
+            return;
+          }
           const poc = msg?.proposal_open_contract;
-          if (!poc || !poc.is_sold) return;
-
-          sub.unsubscribe();
-          const won = poc.status === 'won';
-          const profit = Number(poc.profit ?? 0);
-          resolve({ won, profit });
+          if (!poc) return;
+          if (poc.is_sold || poc.status === 'won' || poc.status === 'lost') {
+            const won = poc.status === 'won' || Number(poc.profit ?? 0) > 0;
+            const profit = Number(poc.profit ?? 0);
+            finish(won, profit);
+          }
         }
       );
+
+      // Fallback timer: 20s max for 1-tick contract
+      timer = setTimeout(async () => {
+        if (resolved) return;
+        try {
+          const oneOff = await this.api.send<{
+            proposal_open_contract?: { is_sold?: number; profit?: number; status?: string };
+          }>({ proposal_open_contract: 1, contract_id: contractId });
+          const poc = oneOff?.proposal_open_contract;
+          if (poc && (poc.is_sold || poc.status === 'won' || poc.status === 'lost')) {
+            finish(poc.status === 'won' || Number(poc.profit ?? 0) > 0, Number(poc.profit ?? 0));
+            return;
+          }
+        } catch {}
+        fail(new Error('Contract settlement timeout (20s)'));
+      }, 20000);
     });
   }
 }

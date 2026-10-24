@@ -75,16 +75,87 @@ export const AiScannerModal: React.FC = () => {
   const getApiClient = (): DerivApiClient => {
     const wsInstance: any = WS || (window as any).BinarySocket || (window as any).WS;
     return {
-      send: (req) => wsInstance.send(req),
+      send: async (req) => {
+        const ws: any = wsInstance || (window as any).BinarySocket || (window as any).WS;
+        if (!ws) throw new Error('Deriv WebSocket connection is not initialized');
+        if (req.ticks_history && typeof ws.getTicksHistory === 'function') {
+          return ws.getTicksHistory(req);
+        }
+        if (typeof ws.send === 'function') {
+          return ws.send(req);
+        }
+        if (typeof ws.get === 'function' && typeof ws.get()?.send === 'function') {
+          return ws.get().send(req);
+        }
+        if (typeof ws.authorized?.send === 'function') {
+          return ws.authorized.send(req);
+        }
+        throw new Error('Deriv WebSocket send is not available');
+      },
       subscribe: (req, onMessage) => {
-        const sub = wsInstance.subscribe(req, onMessage);
-        return {
-          unsubscribe: () => {
-            if (sub && typeof sub.unsubscribe === 'function') {
-              sub.unsubscribe();
+        const ws: any = wsInstance || (window as any).BinarySocket || (window as any).WS;
+        if (!ws) throw new Error('Deriv WebSocket connection is not initialized');
+
+        // 1. Specific helper methods
+        if (req.ticks && !req.subscribe && typeof ws.subscribeTicks === 'function') {
+          const sub = ws.subscribeTicks(req.ticks, onMessage);
+          return {
+            unsubscribe: () => {
+              if (sub && typeof sub.unsubscribe === 'function') sub.unsubscribe();
+            },
+          };
+        }
+
+        if (req.proposal_open_contract && typeof ws.subscribeProposalOpenContract === 'function') {
+          const sub = ws.subscribeProposalOpenContract(req.contract_id, onMessage);
+          return {
+            unsubscribe: () => {
+              if (sub && typeof sub.unsubscribe === 'function') sub.unsubscribe();
+            },
+          };
+        }
+
+        // 2. ws.subscribe (handles both Observable return and Subscription return)
+        if (typeof ws.subscribe === 'function') {
+          try {
+            const res = ws.subscribe(req, onMessage);
+            if (res && typeof res.unsubscribe === 'function') {
+              return { unsubscribe: () => res.unsubscribe() };
             }
-          },
-        };
+            if (res && typeof res.subscribe === 'function') {
+              const sub = res.subscribe({
+                next: (msg: any) => onMessage(msg),
+                error: (err: any) => console.error('Subscription error:', err),
+              });
+              return {
+                unsubscribe: () => {
+                  if (sub && typeof sub.unsubscribe === 'function') sub.unsubscribe();
+                },
+              };
+            }
+          } catch (e) {
+            console.warn('ws.subscribe error:', e);
+          }
+        }
+
+        // 3. Fallback: ws.get() RxJS Observable
+        const api = typeof ws.get === 'function' ? ws.get() : ws;
+        if (api && typeof api.subscribe === 'function') {
+          const obs = api.subscribe(req);
+          if (obs && typeof obs.subscribe === 'function') {
+            const sub = obs.subscribe({
+              next: (msg: any) => onMessage(msg),
+              error: (err: any) => console.error('Subscription error:', err),
+            });
+            return {
+              unsubscribe: () => {
+                if (sub && typeof sub.unsubscribe === 'function') sub.unsubscribe();
+              },
+            };
+          }
+        }
+
+        throw new Error('Deriv WebSocket subscribe is not available');
       },
     };
   };
@@ -151,6 +222,10 @@ export const AiScannerModal: React.FC = () => {
   // Called when "Load and Run" is confirmed inside the parameters popup
   const handleExecuteEntryBot = async () => {
     if (!bestResult) return;
+    if (activeSessionRef.current) {
+      activeSessionRef.current.stop();
+      activeSessionRef.current = null;
+    }
     setShowParamsPopup(false);
     setIsTradingActive(true);
     setWonCount(0);
@@ -276,6 +351,10 @@ export const AiScannerModal: React.FC = () => {
 
   const handleStartProAiTrading = () => {
     if (!proAiSetup) return;
+    if (activeSessionRef.current) {
+      activeSessionRef.current.stop();
+      activeSessionRef.current = null;
+    }
     setIsTradingActive(true);
     setWonCount(0);
     setLostCount(0);
@@ -325,7 +404,8 @@ export const AiScannerModal: React.FC = () => {
           setTradingStatus(`Pro AI Error: ${err.message}`);
         },
       },
-      currency
+      currency,
+      proAiSetup
     );
 
     activeSessionRef.current = session;

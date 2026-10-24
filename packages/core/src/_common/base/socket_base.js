@@ -211,7 +211,20 @@ const BinarySocketBase = (() => {
 
     const wait = (...responses) => deriv_api?.expectResponse(...responses.filter(excludeAuthorize));
 
-    const subscribe = (request, cb) => deriv_api.subscribe(request).subscribe(cb, cb); // Delegate error handling to the callback
+    const send = request_object => {
+        if (!deriv_api) {
+            return Promise.reject(new Error('Deriv API connection not initialized'));
+        }
+        return deriv_api.send(request_object);
+    };
+
+    const subscribe = (request, cb) => {
+        if (!deriv_api) {
+            console.warn('BinarySocketBase: deriv_api not initialized for subscribe');
+            return { unsubscribe: () => {} };
+        }
+        return deriv_api.subscribe(request).subscribe(cb, cb); // Delegate error handling to the callback
+    };
 
     const subscribeBalance = cb => subscribe({ balance: 1 }, cb);
 
@@ -504,6 +517,8 @@ const BinarySocketBase = (() => {
         paymentAgentTransfer,
         setAccountCurrency,
         setAvailability,
+        send,
+        subscribe,
         subscribeBalance,
         subscribeProposal,
         subscribeProposalOpenContract,
