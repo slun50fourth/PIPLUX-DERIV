@@ -1,5 +1,5 @@
 const path = require('path');
 
-const resources = ['constants/layout.scss', 'mixins.scss', 'fonts.scss', 'inline-icons.scss', 'devices.scss'];
+const resources = ['constants.scss', 'constants/layout.scss', 'mixins.scss', 'fonts.scss', 'inline-icons.scss', 'devices.scss'];
 
 module.exports = resources.map(file => path.resolve(__dirname, file));

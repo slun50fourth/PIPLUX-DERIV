@@ -30,6 +30,21 @@ const copyConfig = base => {
             noErrorOnMissing: true,
         },
         {
+            from: path.resolve(__dirname, '../../../node_modules/@deriv/bot-web-ui/dist/bot/css/'),
+            to: 'bot/css/',
+            noErrorOnMissing: true,
+        },
+        {
+            from: path.resolve(__dirname, '../../../node_modules/@deriv/bot-web-ui/dist/bot/media/'),
+            to: 'media',
+            noErrorOnMissing: true,
+        },
+        {
+            from: path.resolve(__dirname, '../../../node_modules/@deriv/bot-web-ui/dist/bot/js/'),
+            to: 'bot/js/',
+            noErrorOnMissing: true,
+        },
+        {
             from: path.resolve(__dirname, '../../../node_modules/@deriv/reports/dist/reports/js/'),
             to: 'reports/js',
             noErrorOnMissing: true,

@@ -46,6 +46,8 @@ const HOISTED_PACKAGES = {
     '@deriv-com/smartcharts-champion': path.resolve(__dirname, '../../../node_modules/@deriv-com/smartcharts-champion'),
     '@deriv/trader': path.resolve(__dirname, '../../../node_modules/@deriv/trader'),
     '@deriv/reports': path.resolve(__dirname, '../../../node_modules/@deriv/reports'),
+    '@deriv/bot-web-ui': path.resolve(__dirname, '../../../node_modules/@deriv/bot-web-ui'),
+    '@deriv/bot-skeleton': path.resolve(__dirname, '../../../node_modules/@deriv/bot-skeleton'),
 };
 
 const BOTS_DIR = path.resolve(__dirname, '../../../bots');

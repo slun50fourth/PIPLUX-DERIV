@@ -23,6 +23,13 @@ const platform_config: TPlatformConfig[] = [
         // [/AI]
         link_to: routes.index,
     },
+    {
+        icon: 'IcBrandDbot',
+        title: () => localize('Bot Builder'),
+        name: 'DBot',
+        description: () => localize('Automated trading at your fingertips. Build and run bots without coding.'),
+        link_to: routes.bot,
+    },
 ];
 
 export default platform_config;

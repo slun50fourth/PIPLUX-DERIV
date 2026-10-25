@@ -13,6 +13,8 @@ const MenuPage = React.lazy(() => import(/* webpackChunkName: "menu" */ 'Modules
 
 const Trader = React.lazy(() => import(/* webpackChunkName: "trader" */ '@deriv/trader'));
 
+const Bot = React.lazy(() => import(/* webpackChunkName: "bot-web-ui-app" */ '@deriv/bot-web-ui'));
+
 const Reports = React.lazy(() => import(/* webpackChunkName: "reports" */ '@deriv/reports'));
 
 const LandingPage = React.lazy(() => import(/* webpackChunkName: "landing-page" */ 'Modules/LandingPage'));
@@ -74,6 +76,12 @@ const getModules = () => {
             path: routes.trader,
             component: Trader,
             getTitle: () => localize('Trader'),
+            protected: false,
+        },
+        {
+            path: routes.bot,
+            component: Bot,
+            getTitle: () => localize('Bot Builder'),
             protected: false,
         },
         {

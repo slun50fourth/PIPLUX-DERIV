@@ -70,6 +70,16 @@ export const AiScannerDrawerContent: React.FC<AiScannerDrawerContentProps> = obs
         }, 1200);
     };
 
+    const handleOpenInBotBuilder = (result: ScanResult) => {
+        const config = sanitiseConfig({ tickCount });
+        const xml = buildBotXml(APEX_RANGE_AI_XML_TEMPLATE, result, config);
+
+        sessionStorage.setItem('dbot_autoload_xml', xml);
+        sessionStorage.setItem('dbot_autoload_name', `Apex AI (${result.symbol} Over ${result.entryPointDigit})`);
+        onClose?.();
+        window.location.href = '/bot';
+    };
+
     const handleDownloadXml = (result: ScanResult) => {
         const config = sanitiseConfig({ tickCount });
         const xml = buildBotXml(APEX_RANGE_AI_XML_TEMPLATE, result, config);
@@ -268,6 +278,14 @@ export const AiScannerDrawerContent: React.FC<AiScannerDrawerContentProps> = obs
                         >
                             <span>🎯</span>
                             <Localize i18n_default_text='Apply Setup to Trader' />
+                        </button>
+                        <button
+                            type='button'
+                            className='ai-scanner-drawer__hero-actions-bot'
+                            onClick={() => handleOpenInBotBuilder(bestResult)}
+                        >
+                            <span>🤖</span>
+                            <Localize i18n_default_text='Open in Bot Builder' />
                         </button>
                         <button
                             type='button'

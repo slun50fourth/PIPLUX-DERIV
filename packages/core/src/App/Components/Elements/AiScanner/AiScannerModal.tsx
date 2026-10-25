@@ -3,6 +3,7 @@ import './ai-scanner.scss';
 import WS from 'Services/ws-methods';
 import { useStore } from '@deriv/stores';
 
+import { APEX_RANGE_AI_XML_TEMPLATE } from '../../../../../../../bots/apexRangeXmlTemplate';
 import {
   runEntryScan,
   buildBotXml,
@@ -219,6 +220,26 @@ export const AiScannerModal: React.FC = () => {
     setShowParamsPopup(true);
   };
 
+  const handleOpenInBotBuilder = () => {
+    if (!bestResult) return;
+    try {
+      const fullXml = buildBotXml(APEX_RANGE_AI_XML_TEMPLATE, bestResult, {
+        tickCount: ticksCount,
+        stake: params.stake || 0.5,
+        martingale: params.martingale || 2,
+        numberOfWins: params.numberOfWins || 5,
+        stopLoss: params.stopLoss || 50,
+        useMartingale: params.useMartingale ?? true,
+      });
+      sessionStorage.setItem('dbot_autoload_xml', fullXml);
+      sessionStorage.setItem('dbot_autoload_name', `Apex AI (${bestResult.symbol} Over ${bestResult.entryPointDigit})`);
+      window.location.href = '/bot';
+    } catch (e) {
+      console.error('Failed to prepare bot XML:', e);
+      window.location.href = '/bot';
+    }
+  };
+
   // Called when "Load and Run" is confirmed inside the parameters popup
   const handleExecuteEntryBot = async () => {
     if (!bestResult) return;
@@ -238,7 +259,7 @@ export const AiScannerModal: React.FC = () => {
 
     // 1. If Blockly exists, populate workspace
     try {
-      const templateXml = `<xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true" collection="false"></xml>`;
+      const templateXml = APEX_RANGE_AI_XML_TEMPLATE;
       buildBotXml(templateXml, bestResult, {
         tickCount: ticksCount,
         stake: params.stake || 0.5,
@@ -604,6 +625,15 @@ export const AiScannerModal: React.FC = () => {
                       disabled={!bestResult || isScanning || isTradingActive}
                     >
                       Load and Run Bot
+                    </button>
+                    <button
+                      type="button"
+                      className="scanner-actions__secondary"
+                      onClick={handleOpenInBotBuilder}
+                      disabled={!bestResult || isScanning}
+                      style={{ background: 'rgba(0, 245, 255, 0.15)', borderColor: 'rgba(0, 245, 255, 0.4)', color: '#00f5ff' }}
+                    >
+                      Open in Bot Builder
                     </button>
                   </div>
 

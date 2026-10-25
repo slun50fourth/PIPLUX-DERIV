@@ -3,6 +3,7 @@ export const routes = {
     index: '/',
     landing: '/landing',
     trader: '/trader',
+    bot: '/bot',
     callback_page: '/callback',
     error404: '/404',
     endpoint: '/endpoint',
@@ -22,6 +23,7 @@ export const routes = {
 export const DISABLE_LANDSCAPE_BLOCKER_ROUTES = [
     routes.index,
     routes.landing,
+    routes.bot,
     routes.reports,
     routes.endpoint,
     /** because contract route has dynamic id */

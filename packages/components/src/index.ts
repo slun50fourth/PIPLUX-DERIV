@@ -37,6 +37,7 @@ export { default as FadeWrapper } from './components/fade-wrapper';
 export { default as Field } from './components/field';
 export { default as FilterDropdown } from './components/filter-dropdown';
 export { default as Flyout } from './components/flyout';
+export { default as Icon } from './components/icon';
 export { default as IconTradeTypes } from './components/icon-trade-types';
 export * from './components/inline-message';
 export { default as Input } from './components/input';

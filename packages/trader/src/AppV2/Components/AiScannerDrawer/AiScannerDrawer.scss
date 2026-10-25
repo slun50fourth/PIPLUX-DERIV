@@ -312,6 +312,28 @@
                 }
             }
 
+            &-bot {
+                width: 100%;
+                padding: 10px 14px;
+                border-radius: 8px;
+                border: 1px solid rgba(0, 245, 255, 0.5);
+                background: linear-gradient(135deg, rgba(0, 245, 255, 0.25) 0%, rgba(0, 136, 255, 0.35) 100%);
+                color: #ffffff;
+                font-size: 13px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+
+                &:hover {
+                    background: linear-gradient(135deg, rgba(0, 245, 255, 0.4) 0%, rgba(0, 136, 255, 0.5) 100%);
+                    box-shadow: 0 4px 14px rgba(0, 245, 255, 0.4);
+                }
+            }
+
             &-xml {
                 width: 100%;
                 padding: 8px 14px;

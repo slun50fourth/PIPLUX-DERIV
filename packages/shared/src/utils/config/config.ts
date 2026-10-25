@@ -7,7 +7,8 @@
  *
  */
 
-import { getWebSocketURL } from '../brand';
+import { getWebSocketURL, isProduction } from '../brand';
+export { isProduction };
 
 /**
  * Gets account_type with priority: URL parameter > localStorage > default 'public'
