@@ -233,7 +233,7 @@ const generateSWConfig = () => ({
             },
         },
         {
-            urlPattern: /(trader|reports)\//,
+            urlPattern: /(trader|reports|bot)\//,
             handler: 'CacheFirst',
             options: {
                 cacheName: 'packages-files',
