@@ -10,7 +10,7 @@
     "scripts": {
         "start": "rm -rf lib && npm run test && npm run serve",
         "serve": "rm -rf lib && cross-env BUILD_MODE='serve' webpack --mode=production --progress --watch",
-        "build": "rm -rf lib && webpack --mode=production --progress",
+        "build": "rm -rf lib && webpack --mode=production",
         "test": "echo \"No tests specified\"",
         "test:eslint": "eslint \"./src/**/*.?(js|jsx)\""
     },

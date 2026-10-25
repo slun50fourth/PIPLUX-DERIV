@@ -1,0 +1,3 @@
+name = "piplux-deriv"
+compatibility_date = "2026-10-25"
+pages_build_output_dir = "packages/core/dist"
