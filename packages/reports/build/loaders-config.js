@@ -1,5 +1,6 @@
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const path = require('path');
+const sass = require('sass');
 
 const IS_RELEASE =
     process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging' || process.env.NODE_ENV === 'test';
@@ -100,6 +101,10 @@ const css_loaders = [
         loader: 'sass-loader',
         options: {
             sourceMap: !IS_RELEASE,
+            sassOptions: {
+                quietDeps: true,
+                logger: sass.Logger ? sass.Logger.silent : undefined,
+            },
         },
     },
     {

@@ -5,6 +5,10 @@ module.exports = function (env) {
     const base = env && env.base && env.base !== true ? `/${env.base}/` : '/';
 
     return {
+        stats: 'errors-warnings',
+        infrastructureLogging: {
+            level: 'warn',
+        },
         context: path.resolve(__dirname, '../'),
         devtool: IS_RELEASE ? 'source-map' : 'eval-cheap-module-source-map',
         entry: {

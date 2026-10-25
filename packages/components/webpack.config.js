@@ -1,7 +1,12 @@
 const path = require('path');
+const sass = require('sass');
 
 module.exports = function () {
     return {
+        stats: 'errors-warnings',
+        infrastructureLogging: {
+            level: 'warn',
+        },
         entry: {
             components: path.resolve(__dirname, 'src', 'index.ts'),
         },
@@ -44,6 +49,10 @@ module.exports = function () {
                             loader: 'sass-loader',
                             options: {
                                 sourceMap: true,
+                                sassOptions: {
+                                    quietDeps: true,
+                                    logger: sass.Logger ? sass.Logger.silent : undefined,
+                                },
                             },
                         },
                         {

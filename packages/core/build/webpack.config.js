@@ -121,8 +121,9 @@ module.exports = function (env) {
         snapshot: {
             managedPaths: [],
         },
-        stats: {
-            colors: true,
+        stats: 'errors-warnings',
+        infrastructureLogging: {
+            level: 'warn',
         },
     };
 };

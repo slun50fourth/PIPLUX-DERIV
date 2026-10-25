@@ -6,6 +6,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const path = require('path');
 const StyleLintPlugin = require('stylelint-webpack-plugin');
 const SpriteLoaderPlugin = require('svg-sprite-loader/plugin');
+const sass = require('sass');
 
 const IS_RELEASE =
     process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging' || process.env.NODE_ENV === 'test';
@@ -23,6 +24,10 @@ module.exports = function (env) {
     const base = env && env.base && env.base !== true ? `/${env.base}/` : '/';
 
     return {
+        stats: 'errors-warnings',
+        infrastructureLogging: {
+            level: 'warn',
+        },
         entry: [path.join(__dirname, 'src', 'app', 'index.ts')],
         output: {
             ...output,
@@ -61,7 +66,13 @@ module.exports = function (env) {
                         },
                         {
                             loader: 'sass-loader',
-                            options: { sourceMap: !IS_RELEASE },
+                            options: {
+                                sourceMap: !IS_RELEASE,
+                                sassOptions: {
+                                    quietDeps: true,
+                                    logger: sass.Logger ? sass.Logger.silent : undefined,
+                                },
+                            },
                         },
                         {
                             loader: 'sass-resources-loader',
