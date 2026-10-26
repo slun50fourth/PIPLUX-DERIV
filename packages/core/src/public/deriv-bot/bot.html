@@ -1,8 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 
 <head>
-	<!-- Embedded in PIPLUX Bot Builder Frame -->
+	<base href="/deriv-bot/">
+	<script src="js/piplux-bridge.js?v=3"></script>
 	<link rel="apple-touch-icon" sizes="57x57" href="image/binary-style/favicons/apple-touch-icon-57x57.png">
 	<link rel="apple-touch-icon" sizes="114x114" href="image/binary-style/favicons/apple-touch-icon-114x114.png">
 	<link rel="apple-touch-icon" sizes="72x72" href="image/binary-style/favicons/apple-touch-icon-72x72.png">
@@ -20,9 +21,11 @@
 	<meta http-equiv="cache-control" content="no-cache, must-revalidate, post-check=0, pre-check=0">
 	<meta http-equiv="pragma" content="no-cache">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PIPLUX Bot Builder</title>
-<link href="css/bundle-bbbb3a590f.css" rel="stylesheet" />    <link rel="stylesheet" href="css/binary.css">
-<link href="css/bot-0f3b1a8239.css" rel="stylesheet" /><!-- Google Tag Manager --> <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src= 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f); })(window,document,'script','dataLayer','GTM-P97C2DZ');</script> <!-- End Google Tag Manager --></head>
+	<title>PIPLUX Bot Builder</title>
+	<link href="css/bundle-bbbb3a590f.css?v=3" rel="stylesheet" />
+	<link rel="stylesheet" href="css/binary.css?v=3">
+	<link href="css/bot-0f3b1a8239.css?v=3" rel="stylesheet" />
+</head>
 
 <body>
     <div id="tour"></div>
@@ -89,17 +92,11 @@
     <li class="ru">Русский</li>
     <li class="zh_cn">简体中文</li>
     <li class="zh_tw">繁體中文</li>
-  <!--
-    <li class="es">Español</li>
-    <li class="it">Italiano</li>
-    <li class="pt">Português</li>
-    <li class="vi">Tiếng Việt</li>
-  -->  
   </ul>
 </div>
         </div>
         <div id="server-status" class="right-header"></div>
-        <a id="contact-us" class="right-header" target="_blank" href="https://www.binary.com/en/contact.html"
+        <a id="contact-us" class="right-header" target="_blank" href="https://pipluxtrade.com"
             data-i18n-text="Contact us"></a>
         <div id="server-time" class="right-header"></div>
     </div>
@@ -107,10 +104,10 @@
     <div id="header" style="display: none;">
         <div class="left-header">
             <div class="logo-wrapper">
-                <a href="https://www.binary.com" target="blank" id="logo">
+                <a href="https://pipluxtrade.com" target="blank" id="logo">
                     <div class="logo-parent">
                         <div class="logo">
-                            <img class="responsive" src="image/binary-style/logo/symbol.svg" alt="Binary logo" />
+                            <img class="responsive" src="image/binary-style/logo/symbol.svg" alt="PIPLUX" />
                         </div>
                         <div class="binary-logo-text">
                             <img class="responsive" src="" alt="">
@@ -219,89 +216,16 @@
         <input title="Open an already saved XML file and retrieve its blocks" type="file" id="files" accept=".xml"
             multiple />
     </form>
-    <div id="footer"></div>
+    <div id="footer" style="display: none;"></div>
     <audio id="announcement" src="sound/announcement.ogg" autostart="false"></audio>
     <audio id="earned-money" src="sound/coins.ogg" autostart="false"></audio>
     <audio id="job-done" src="sound/job-done.ogg" autostart="false"></audio>
     <audio id="error" src="sound/out-of-bounds.ogg" autostart="false"></audio>
     <audio id="severe-error" src="sound/i-am-being-serious.ogg" autostart="false"></audio>
-<script src="js/bundle-ca910a23e2.js"></script><script src="js/bot-e035ddd5ec.min.js"></script><script>!function(e,l,v,i,o,n){e[i]||(e[i]={}),e[i].account_id=n;var g,h;g=l.createElement(v),g.type="text/javascript",g.async=1,g.src=o+n,h=l.getElementsByTagName(v)[0],h.parentNode.insertBefore(g,h);e[i].q=[];e[i].on=function(z,y){e[i].q.push([z,y])}}(window,document,"script","_elev","https://cdn.elev.io/sdk/bootloader/v4/elevio-bootloader.js?cid=","5bbc2de0b7365");</script><!-- Google Tag Manager (noscript) --> <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-P97C2DZ" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript> <!-- End Google Tag Manager (noscript) -->    <div class="notifyjs-corner" style="bottom: 0px; right: 0px;"></div>
+    <script src="js/bundle-ca910a23e2.js?v=3"></script>
+    <script src="js/bot-e035ddd5ec.min.js?v=3"></script>
+    <div class="notifyjs-corner" style="bottom: 0px; right: 0px;"></div>
     <div class="notifyjs-corner" style="bottom: 0px; left: 0px;"></div>
-<script>
-(function() {
-    function notifyReady() {
-        try {
-            window.parent.postMessage({ type: 'newdtrader:ready' }, '*');
-        } catch (e) {}
-    }
-
-    window.addEventListener('load', function() {
-        notifyReady();
-        setTimeout(notifyReady, 1000);
-    });
-
-    window.addEventListener('message', function(event) {
-        if (!event.data || typeof event.data !== 'object') return;
-        var data = event.data;
-
-        if (data.type === 'newdtrader:auth') {
-            try {
-                if (data.auth && data.auth.access_token && data.activeAccountId) {
-                    var tokenList = [];
-                    try {
-                        tokenList = JSON.parse(localStorage.getItem('tokenList') || '[]');
-                    } catch (e) { tokenList = []; }
-
-                    var found = false;
-                    for (var i = 0; i < tokenList.length; i++) {
-                        if (tokenList[i].token === data.auth.access_token) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        tokenList.push({
-                            token: data.auth.access_token,
-                            accountName: data.activeAccountId
-                        });
-                        localStorage.setItem('tokenList', JSON.stringify(tokenList));
-                    }
-                }
-            } catch (err) {
-                console.warn('[BotBuilderBridge] auth sync error:', err);
-            }
-        }
-
-        if (data.type === 'dbot:load-xml' && data.xml) {
-            try {
-                var ws = (window.Blockly && (window.Blockly.mainWorkspace || (typeof window.Blockly.getMainWorkspace === 'function' ? window.Blockly.getMainWorkspace() : null)));
-                if (ws && window.Blockly.Xml) {
-                    var toDom = (window.Blockly.utils && window.Blockly.utils.xml && window.Blockly.utils.xml.textToDom) || window.Blockly.Xml.textToDom;
-                    var xmlDom = toDom(data.xml);
-                    if (typeof window.Blockly.Xml.clearWorkspaceAndLoadFromXml === 'function') {
-                        window.Blockly.Xml.clearWorkspaceAndLoadFromXml(xmlDom, ws);
-                    } else if (typeof window.Blockly.Xml.domToWorkspace === 'function') {
-                        ws.clear();
-                        window.Blockly.Xml.domToWorkspace(xmlDom, ws);
-                    }
-                    console.log('[BotBuilderBridge] XML loaded successfully into workspace.');
-                }
-            } catch (err) {
-                console.warn('[BotBuilderBridge] load-xml error:', err);
-            }
-        }
-
-        if (data.type === 'dbot:run-bot') {
-            try {
-                var runButton = document.getElementById('runButton');
-                if (runButton) runButton.click();
-            } catch (err) {
-                console.warn('[BotBuilderBridge] run-bot error:', err);
-            }
-        }
-    });
-})();
-</script>
 </body>
 
 </html>
