@@ -493,6 +493,11 @@
             case 'proposal_open_contract':
                 if (out.proposal_open_contract) {
                     out.proposal_open_contract = normalizeOpenContract(out.proposal_open_contract);
+                    if (typeof window.__pipluxOnContractUpdate === 'function') {
+                        try {
+                            window.__pipluxOnContractUpdate(out.proposal_open_contract);
+                        } catch (e) {}
+                    }
                 }
                 break;
 
@@ -1198,17 +1203,501 @@
         }
     }, 50);
 
-    // 6. Parent <-> Iframe PostMessage & UI Hooks
+    // 6. DBTraders UI Controller (Left Sidebar, Right Drawer, Bottom Run Dock, Quick Strategy Modal)
+    var dbStats = {
+        totalStake: 0,
+        totalPayout: 0,
+        runs: 0,
+        lost: 0,
+        won: 0,
+        profit: 0,
+        currency: 'USD',
+        settledContracts: {}
+    };
+
+    function formatMoney(val, curr) {
+        var n = Number(val) || 0;
+        return n.toFixed(2) + ' ' + (curr || dbStats.currency || 'USD');
+    }
+
+    function renderDbStats() {
+        var elStake = document.getElementById('db-stat-stake');
+        var elPayout = document.getElementById('db-stat-payout');
+        var elRuns = document.getElementById('db-stat-runs');
+        var elLost = document.getElementById('db-stat-lost');
+        var elWon = document.getElementById('db-stat-won');
+        var elProfit = document.getElementById('db-stat-profit');
+
+        if (elStake) elStake.textContent = formatMoney(dbStats.totalStake);
+        if (elPayout) elPayout.textContent = formatMoney(dbStats.totalPayout);
+        if (elRuns) elRuns.textContent = String(dbStats.runs);
+        if (elLost) elLost.textContent = String(dbStats.lost);
+        if (elWon) elWon.textContent = String(dbStats.won);
+        if (elProfit) {
+            var p = Number(dbStats.profit) || 0;
+            elProfit.textContent = (p > 0 ? '+' : '') + formatMoney(p);
+            elProfit.className = 'db-stat-value' + (p > 0 ? ' positive' : p < 0 ? ' negative' : '');
+        }
+    }
+
+    function appendJournalEntry(message, type) {
+        var jList = document.getElementById('db-journal-list');
+        if (!jList) return;
+        var item = document.createElement('div');
+        item.className = 'db-journal-item' + (type === 'success' ? ' success' : type === 'error' ? ' error' : '');
+        var now = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' GMT';
+        item.innerHTML = '<div class="db-journal-time">' + now + '</div><div>' + message + '</div>';
+        jList.insertBefore(item, jList.firstChild);
+    }
+
+    window.__pipluxOnContractUpdate = function (poc) {
+        if (!poc || !poc.contract_id) return;
+        var cid = String(poc.contract_id);
+        if (poc.currency) dbStats.currency = poc.currency;
+
+        var emptyState = document.getElementById('db-empty-state');
+        var txList = document.getElementById('db-tx-list');
+        if (emptyState) emptyState.style.display = 'none';
+        var activeTab = document.querySelector('.db-drawer-tab.active');
+        if (txList && (!activeTab || activeTab.getAttribute('data-tab') !== 'journal')) {
+            txList.style.display = 'flex';
+        }
+
+        var existingCard = document.getElementById('db-tx-' + cid);
+        var buyPrice = Number(poc.buy_price) || 0;
+        var profit = Number(poc.profit) || 0;
+        var isSold = Boolean(poc.is_sold || poc.status === 'won' || poc.status === 'lost');
+
+        if (!existingCard && txList) {
+            existingCard = document.createElement('div');
+            existingCard.id = 'db-tx-' + cid;
+            existingCard.className = 'db-tx-item';
+            txList.insertBefore(existingCard, txList.firstChild);
+        }
+
+        if (existingCard) {
+            var profitClass = profit >= 0 ? 'win' : 'loss';
+            var statusLabel = isSold ? (profit >= 0 ? '+' : '') + profit.toFixed(2) + ' ' + dbStats.currency : 'OPEN';
+            existingCard.innerHTML =
+                '<div>' +
+                '<div class="db-tx-symbol">' + (poc.display_name || poc.underlying || 'Volatility Index') + ' (' + (poc.contract_type || 'TRADE') + ')</div>' +
+                '<div class="db-tx-meta">Entry: ' + (poc.entry_tick_display_value || poc.entry_spot || '-') + ' &rarr; Exit: ' + (poc.exit_tick_display_value || poc.current_spot_display_value || '-') + ' | Stake: ' + buyPrice.toFixed(2) + '</div>' +
+                '</div>' +
+                '<div class="db-tx-profit ' + (isSold ? profitClass : '') + '">' + statusLabel + '</div>';
+        }
+
+        if (isSold && !dbStats.settledContracts[cid]) {
+            dbStats.settledContracts[cid] = true;
+            var sellPrice = Number(poc.sell_price !== undefined ? poc.sell_price : buyPrice + profit) || 0;
+            dbStats.totalStake += buyPrice;
+            dbStats.totalPayout += sellPrice;
+            dbStats.runs += 1;
+            if (profit >= 0) {
+                dbStats.won += 1;
+                appendJournalEntry('Contract #' + cid + ' WON: +' + profit.toFixed(2) + ' ' + dbStats.currency, 'success');
+            } else {
+                dbStats.lost += 1;
+                appendJournalEntry('Contract #' + cid + ' LOST: ' + profit.toFixed(2) + ' ' + dbStats.currency, 'error');
+            }
+            dbStats.profit += profit;
+            renderDbStats();
+        }
+    };
+
+    function syncLegacySummaryPanel() {
+        var sp = document.getElementById('summaryPanel');
+        if (!sp) return;
+        var tRuns = sp.querySelector('.totalRuns');
+        var tStake = sp.querySelector('.totalStake');
+        var tPayout = sp.querySelector('.totalPayout');
+        var tWins = sp.querySelector('.totalWins');
+        var tLosses = sp.querySelector('.totalLosses');
+        var tProfit = sp.querySelector('.totalProfit');
+
+        if (tRuns && tRuns.textContent.trim() !== '') {
+            var parsedRuns = parseInt(tRuns.textContent.trim(), 10);
+            if (!isNaN(parsedRuns) && parsedRuns > dbStats.runs) {
+                dbStats.runs = parsedRuns;
+                dbStats.totalStake = parseFloat((tStake && tStake.textContent) || '0') || dbStats.totalStake;
+                dbStats.totalPayout = parseFloat((tPayout && tPayout.textContent) || '0') || dbStats.totalPayout;
+                dbStats.won = parseInt((tWins && tWins.textContent) || '0', 10) || dbStats.won;
+                dbStats.lost = parseInt((tLosses && tLosses.textContent) || '0', 10) || dbStats.lost;
+                dbStats.profit = parseFloat((tProfit && tProfit.textContent) || '0') || dbStats.profit;
+                renderDbStats();
+            }
+        }
+    }
+
+    function applyQuickStrategyOverrides(xmlDom, opts) {
+        if (!xmlDom || !opts) return xmlDom;
+        try {
+            if (opts.symbol) {
+                var symFields = xmlDom.querySelectorAll('field[name="SYMBOL_LIST"]');
+                for (var i = 0; i < symFields.length; i++) {
+                    symFields[i].textContent = opts.symbol;
+                    var subField = symFields[i].parentNode && symFields[i].parentNode.querySelector('field[name="SUBMARKET_LIST"]');
+                    if (subField) {
+                        subField.textContent = opts.symbol.indexOf('1HZ') === 0 ? 'continuous_indices' : 'random_index';
+                    }
+                }
+            }
+
+            var varSetBlocks = xmlDom.querySelectorAll('block[type="variables_set"]');
+            for (var v = 0; v < varSetBlocks.length; v++) {
+                var vf = varSetBlocks[v].querySelector('field[name="VAR"]');
+                var numField = varSetBlocks[v].querySelector('block[type="math_number"] field[name="NUM"]');
+                if (vf && numField) {
+                    var vName = (vf.textContent || '').trim().toLowerCase();
+                    if ((vName === 'stake' || vName === 'initial stake' || vName === 'win stake') && opts.stake) {
+                        numField.textContent = String(opts.stake);
+                    } else if ((vName.indexOf('mart') !== -1 || vName === 'multiplier') && opts.martingale) {
+                        numField.textContent = String(opts.martingale);
+                    } else if ((vName.indexOf('take profit') !== -1 || vName === 'target profit') && opts.tp) {
+                        numField.textContent = String(opts.tp);
+                    } else if (vName.indexOf('stop loss') !== -1 && opts.sl) {
+                        numField.textContent = String(opts.sl);
+                    }
+                }
+            }
+        } catch (e) {}
+        return xmlDom;
+    }
+
+    function fitWorkspaceForViewport() {
+        if (!window.Blockly || !window.Blockly.mainWorkspace) return;
+        var ws = window.Blockly.mainWorkspace;
+        try {
+            if (window.innerWidth <= 768) {
+                if (ws.toolbox_) {
+                    ws.toolbox_.width = 0;
+                }
+                ws.scale = 0.72;
+                ws.scrollX = 12;
+                ws.scrollY = 50;
+                if (typeof ws.translate === 'function') {
+                    ws.translate(ws.scrollX, ws.scrollY);
+                }
+            } else {
+                if (ws.toolbox_) {
+                    ws.toolbox_.width = 220;
+                }
+            }
+        } catch (e) {}
+    }
+
+    function loadXmlStringIntoWorkspace(xmlText, overrides) {
+        registerCustomBlocklyBlocks();
+        if (!window.Blockly || !window.Blockly.mainWorkspace) return false;
+        var xmlDom = window.Blockly.Xml.textToDom(xmlText);
+        if (overrides) {
+            xmlDom = applyQuickStrategyOverrides(xmlDom, overrides);
+        }
+        window.Blockly.Events.setGroup('load');
+        window.Blockly.mainWorkspace.clear();
+        window.Blockly.Xml.domToWorkspace(xmlDom, window.Blockly.mainWorkspace);
+        window.Blockly.Events.setGroup(false);
+        if (window.Blockly.mainWorkspace.cleanUp) {
+            window.Blockly.mainWorkspace.cleanUp();
+        }
+        fitWorkspaceForViewport();
+        appendJournalEntry('Strategy loaded into workspace successfully.', 'success');
+        return true;
+    }
+
+    function initDbTradersUi() {
+        if (window.__dbTradersUiInitialized) return;
+        window.__dbTradersUiInitialized = true;
+
+        // 1. Live GMT Clock
+        var clockEl = document.getElementById('db-clock-text');
+        function updateClock() {
+            if (!clockEl) return;
+            var d = new Date();
+            clockEl.textContent = d.toISOString().replace('T', ' ').substring(0, 19) + ' GMT';
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // 2. Run / Stop Dock Button
+        var runToggleBtn = document.getElementById('db-run-toggle-btn');
+        var runIcon = document.getElementById('db-run-icon');
+        var runLabel = document.getElementById('db-run-label');
+
+        function isBotCurrentlyRunning() {
+            var stopBtn = document.getElementById('stopButton');
+            var runBtn = document.getElementById('runButton');
+            if (!stopBtn || !runBtn) return false;
+            var stopDisplay = window.getComputedStyle(stopBtn).display;
+            var runDisplay = window.getComputedStyle(runBtn).display;
+            return stopDisplay !== 'none' && runDisplay === 'none';
+        }
+
+        function syncRunButtonUi() {
+            if (!runToggleBtn) return;
+            var running = isBotCurrentlyRunning();
+            if (running) {
+                runToggleBtn.classList.add('is-running');
+                if (runIcon) runIcon.innerHTML = '&#9632;';
+                if (runLabel) runLabel.textContent = 'Stop';
+            } else {
+                runToggleBtn.classList.remove('is-running');
+                if (runIcon) runIcon.innerHTML = '&#9654;';
+                if (runLabel) runLabel.textContent = 'Run';
+            }
+            syncLegacySummaryPanel();
+        }
+
+        if (runToggleBtn) {
+            runToggleBtn.addEventListener('click', function () {
+                var running = isBotCurrentlyRunning();
+                if (running) {
+                    var stopBtn = document.getElementById('stopButton');
+                    if (stopBtn) stopBtn.click();
+                    appendJournalEntry('Bot stopped by user.', 'info');
+                } else {
+                    var runBtn = document.getElementById('runButton');
+                    if (runBtn) runBtn.click();
+                    appendJournalEntry('Bot started.', 'success');
+                }
+                setTimeout(syncRunButtonUi, 80);
+            });
+        }
+        setInterval(syncRunButtonUi, 300);
+
+        // 3. Execution Speed Toggle
+        var speedToggle = document.getElementById('db-speed-toggle');
+        var speedText = document.getElementById('db-speed-text');
+        if (speedToggle) {
+            speedToggle.addEventListener('click', function () {
+                var isFast = speedToggle.classList.toggle('fast');
+                if (speedText) {
+                    speedText.textContent = isFast ? 'FAST SPEED' : 'NORMAL SPEED';
+                }
+            });
+        }
+
+        // 4. Right Drawer Tabs, Collapse & Mobile Bottom Sheet Handle
+        var drawerTabs = document.querySelectorAll('.db-drawer-tab');
+        var emptyState = document.getElementById('db-empty-state');
+        var txList = document.getElementById('db-tx-list');
+        var journalList = document.getElementById('db-journal-list');
+
+        for (var t = 0; t < drawerTabs.length; t++) {
+            drawerTabs[t].addEventListener('click', function () {
+                for (var k = 0; k < drawerTabs.length; k++) {
+                    drawerTabs[k].classList.remove('active');
+                }
+                this.classList.add('active');
+                var tabName = this.getAttribute('data-tab');
+                var hasTx = txList && txList.children.length > 0;
+                var hasJournal = journalList && journalList.children.length > 0;
+
+                if (tabName === 'journal') {
+                    if (emptyState) emptyState.style.display = hasJournal ? 'none' : 'flex';
+                    if (txList) txList.style.display = 'none';
+                    if (journalList) journalList.style.display = hasJournal ? 'flex' : 'none';
+                } else {
+                    if (emptyState) emptyState.style.display = hasTx ? 'none' : 'flex';
+                    if (txList) txList.style.display = hasTx ? 'flex' : 'none';
+                    if (journalList) journalList.style.display = 'none';
+                }
+            });
+        }
+
+        var drawerCollapseBtn = document.getElementById('db-drawer-collapse-btn');
+        if (drawerCollapseBtn) {
+            drawerCollapseBtn.addEventListener('click', function () {
+                var collapsed = document.body.classList.toggle('db-drawer-collapsed');
+                drawerCollapseBtn.innerHTML = collapsed ? '&#10094;' : '&#10095;';
+                setTimeout(function () {
+                    window.dispatchEvent(new Event('resize'));
+                }, 50);
+            });
+        }
+
+        var mobileDrawerHandle = document.getElementById('db-mobile-drawer-handle');
+        if (mobileDrawerHandle) {
+            mobileDrawerHandle.addEventListener('click', function () {
+                document.body.classList.toggle('db-mobile-drawer-open');
+            });
+        }
+
+        var resetBtn = document.getElementById('db-summary-reset-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function () {
+                dbStats.totalStake = 0;
+                dbStats.totalPayout = 0;
+                dbStats.runs = 0;
+                dbStats.lost = 0;
+                dbStats.won = 0;
+                dbStats.profit = 0;
+                dbStats.settledContracts = {};
+                renderDbStats();
+                if (txList) {
+                    txList.innerHTML = '';
+                    txList.style.display = 'none';
+                }
+                if (journalList) {
+                    journalList.innerHTML = '';
+                    journalList.style.display = 'none';
+                }
+                if (emptyState) emptyState.style.display = 'flex';
+                var legacyClear = document.getElementById('summaryClearButton');
+                if (legacyClear) legacyClear.click();
+            });
+        }
+
+        // 5. Left Sidebar Block Search & Mobile Blocks Menu Toggle
+        var searchInput = document.getElementById('db-block-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                var q = (this.value || '').trim().toLowerCase();
+                var rows = document.querySelectorAll('.blocklyTreeRow');
+                for (var r = 0; r < rows.length; r++) {
+                    var label = rows[r].querySelector('.blocklyTreeLabel');
+                    var txt = label ? (label.textContent || '').toLowerCase() : '';
+                    var itemWrapper = rows[r].parentNode;
+                    if (!q || txt.indexOf(q) !== -1) {
+                        rows[r].style.display = '';
+                        if (itemWrapper) itemWrapper.style.display = '';
+                    } else {
+                        rows[r].style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        var mobileBlocksToggle = document.getElementById('db-mobile-blocks-toggle');
+        if (mobileBlocksToggle) {
+            mobileBlocksToggle.addEventListener('click', function () {
+                document.body.classList.toggle('db-mobile-menu-open');
+            });
+        }
+
+        // Close mobile blocks menu when clicking on the Blockly canvas
+        var blocklyArea = document.getElementById('blocklyArea');
+        if (blocklyArea) {
+            blocklyArea.addEventListener('pointerdown', function (ev) {
+                if (window.innerWidth <= 768 && document.body.classList.contains('db-mobile-menu-open')) {
+                    var inToolbox = ev.target && ev.target.closest && ev.target.closest('.blocklyToolboxDiv, .blocklyFlyout, #db-left-panel-header, #db-mobile-blocks-toggle');
+                    if (!inToolbox) {
+                        document.body.classList.remove('db-mobile-menu-open');
+                    }
+                }
+            });
+        }
+
+        // 6. Quick Strategy Modal
+        var qsBackdrop = document.getElementById('db-qs-modal-backdrop');
+        var qsOpenBtn = document.getElementById('db-quick-strategy-btn');
+        var qsMobileBtn = document.getElementById('db-mobile-quick-btn');
+        var qsCloseBtn = document.getElementById('db-qs-close');
+        var qsLoadBtn = document.getElementById('db-qs-load-btn');
+        var qsRunBtn = document.getElementById('db-qs-run-btn');
+
+        function openQsModal() {
+            if (qsBackdrop) qsBackdrop.classList.add('open');
+        }
+        function closeQsModal() {
+            if (qsBackdrop) qsBackdrop.classList.remove('open');
+        }
+
+        if (qsOpenBtn) qsOpenBtn.addEventListener('click', openQsModal);
+        if (qsMobileBtn) qsMobileBtn.addEventListener('click', openQsModal);
+        if (qsCloseBtn) qsCloseBtn.addEventListener('click', closeQsModal);
+        if (qsBackdrop) {
+            qsBackdrop.addEventListener('click', function (ev) {
+                if (ev.target === qsBackdrop) closeQsModal();
+            });
+        }
+
+        function handleQsAction(autoRun) {
+            var presetEl = document.getElementById('db-qs-preset');
+            var symEl = document.getElementById('db-qs-symbol');
+            var stakeEl = document.getElementById('db-qs-stake');
+            var martEl = document.getElementById('db-qs-martingale');
+            var tpEl = document.getElementById('db-qs-tp');
+            var slEl = document.getElementById('db-qs-sl');
+
+            var url = (presetEl && presetEl.value) || '/bots/Apex_Range_AI.xml';
+            var overrides = {
+                symbol: symEl ? symEl.value : '1HZ100V',
+                stake: stakeEl ? stakeEl.value : '1',
+                martingale: martEl ? martEl.value : '2',
+                tp: tpEl ? tpEl.value : '10',
+                sl: slEl ? slEl.value : '50'
+            };
+
+            fetch(url)
+                .then(function (r) {
+                    return r.text();
+                })
+                .then(function (xmlText) {
+                    loadXmlStringIntoWorkspace(xmlText, overrides);
+                    closeQsModal();
+                    document.body.classList.remove('db-mobile-menu-open');
+                    if (autoRun) {
+                        setTimeout(function () {
+                            var runBtn = document.getElementById('runButton');
+                            if (runBtn) runBtn.click();
+                        }, 250);
+                    }
+                })
+                .catch(function (err) {
+                    console.error('[PipluxBridge] Failed to load Quick Strategy XML:', err);
+                });
+        }
+
+        if (qsLoadBtn) {
+            qsLoadBtn.addEventListener('click', function () {
+                handleQsAction(false);
+            });
+        }
+        if (qsRunBtn) {
+            qsRunBtn.addEventListener('click', function () {
+                handleQsAction(true);
+            });
+        }
+
+        // Trigger resize after Blockly injects so #blocklyDiv matches the new layout dimensions
+        window.addEventListener('resize', function () {
+            setTimeout(fitWorkspaceForViewport, 20);
+        });
+        setTimeout(function () {
+            window.dispatchEvent(new Event('resize'));
+            fitWorkspaceForViewport();
+        }, 300);
+        setTimeout(function () {
+            window.dispatchEvent(new Event('resize'));
+            fitWorkspaceForViewport();
+        }, 1200);
+    }
+
+    // 7. Parent <-> Iframe PostMessage & UI Hooks
     function notifyParentReady() {
         try {
             window.parent.postMessage({ type: 'newdtrader:ready' }, '*');
         } catch (e) {}
     }
 
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDbTradersUi);
+    } else {
+        initDbTradersUi();
+    }
+
     window.addEventListener('load', function () {
+        initDbTradersUi();
         registerCustomBlocklyBlocks();
         notifyParentReady();
         setTimeout(notifyParentReady, 1000);
+        setTimeout(function () {
+            window.dispatchEvent(new Event('resize'));
+            fitWorkspaceForViewport();
+        }, 600);
+        setTimeout(function () {
+            fitWorkspaceForViewport();
+        }, 1800);
 
         document.addEventListener(
             'click',

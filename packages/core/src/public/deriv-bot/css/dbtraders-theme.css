@@ -1,0 +1,933 @@
+/**
+ * PIPLUX Bot Builder — DBTraders Dark Navy & Royal Blue UI Theme
+ * Matches DBTraders desktop & mobile layout while preserving full Blockly functionality.
+ */
+
+:root {
+    --db-bg-canvas: #060911;
+    --db-bg-panel: #0b1326;
+    --db-bg-panel-alt: #0e1830;
+    --db-bg-bottom: #080d1a;
+    --db-border: #1a2a4a;
+    --db-border-light: #243b6b;
+    --db-blue-main: #1560bd;
+    --db-blue-gradient: linear-gradient(180deg, #1e62d0 0%, #154599 100%);
+    --db-teal-run: #159e83;
+    --db-red-stop: #e11d48;
+    --db-text-main: #f8fafc;
+    --db-text-muted: #94a3b8;
+    --db-right-drawer-width: 330px;
+}
+
+body.db-drawer-collapsed {
+    --db-right-drawer-width: 0px;
+}
+
+html,
+body {
+    background-color: var(--db-bg-canvas) !important;
+    color: var(--db-text-main) !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif !important;
+    overflow: hidden !important;
+    height: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* 1. Hide legacy Binary.com chrome (parent shell already provides account & nav) */
+#topbar,
+#header,
+#footer,
+#tour,
+#toolbox-account,
+#toolbox-all-accounts,
+#toggleHeaderButton,
+#integrations,
+#showSummary,
+#logButton {
+    display: none !important;
+}
+
+/* Keep native #runButton and #stopButton in DOM for JS click delegation, hidden visually */
+#toolbox #runButton,
+#toolbox #stopButton {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+}
+
+/* 2. Blockly Canvas & Block Colors (DBTraders Royal Blue & Dark Pills) */
+.blocklySvg,
+.blocklyMainBackground {
+    background-color: var(--db-bg-canvas) !important;
+    fill: var(--db-bg-canvas) !important;
+}
+
+/* Transform Binary Bot's #2a3052 main blocks into DBTraders Royal Blue (#1560bd) */
+path.blocklyPath[fill="#2a3052"],
+path.blocklyPath[fill="#2A3052"],
+path.blocklyPath[fill="rgb(42, 48, 82)"] {
+    fill: #1560bd !important;
+}
+
+path.blocklyPathDark[fill="#222642"],
+path.blocklyPathDark[fill="#222642"] {
+    fill: #0f468c !important;
+}
+
+path.blocklyPathLight[stroke="#555975"] {
+    stroke: #3b82f6 !important;
+}
+
+/* Sub-blocks: crisp light slate with subtle border */
+path.blocklyPath[fill="#f2f2f2"],
+path.blocklyPath[fill="#dedede"] {
+    fill: #e8edf5 !important;
+}
+
+/* Editable dropdowns & inputs inside blocks -> DBTraders dark rounded pills with white text */
+g.blocklyEditableText > rect {
+    fill: #090e1a !important;
+    fill-opacity: 1 !important;
+    rx: 8px !important;
+    ry: 8px !important;
+    stroke: #26395e !important;
+    stroke-width: 1px !important;
+}
+
+g.blocklyEditableText > text,
+g.blocklyEditableText > text > tspan,
+g.blocklyEditableText tspan {
+    fill: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+/* Blockly Flyout & Scrollbars */
+.blocklyFlyoutBackground {
+    fill: #0d162b !important;
+    fill-opacity: 0.98 !important;
+    stroke: var(--db-border) !important;
+}
+
+/* Blockly Dropdown Menus & Widget Input */
+.blocklyWidgetDiv .goog-menu {
+    background: #0d172e !important;
+    border: 1px solid var(--db-border-light) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.7) !important;
+    padding: 4px 0 !important;
+    max-height: 320px !important;
+    overflow-y: auto !important;
+}
+
+.blocklyWidgetDiv .goog-menuitem {
+    padding: 6px 16px !important;
+}
+
+.blocklyWidgetDiv .goog-menuitem-content {
+    color: #e2e8f0 !important;
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+}
+
+.blocklyWidgetDiv .goog-menuitem-highlight,
+.blocklyWidgetDiv .goog-menuitem-hover {
+    background: #1d5bc6 !important;
+    border: none !important;
+}
+
+.blocklyWidgetDiv .goog-menuitem-highlight .goog-menuitem-content,
+.blocklyWidgetDiv .goog-menuitem-hover .goog-menuitem-content {
+    color: #ffffff !important;
+}
+
+.blocklyHtmlInput {
+    background-color: #090e1a !important;
+    color: #ffffff !important;
+    border: 1px solid #3b82f6 !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    padding: 0 6px !important;
+}
+
+/* 3. Left Sidebar Header (Quick Strategy + Blocks menu + Search) & BlocklyToolboxDiv */
+#db-left-panel-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 220px;
+    height: 112px;
+    background: var(--db-bg-panel);
+    border-right: 1px solid var(--db-border);
+    border-bottom: 1px solid var(--db-border);
+    padding: 10px;
+    z-index: 105;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#db-quick-strategy-btn {
+    width: 100%;
+    height: 34px;
+    background: var(--db-blue-gradient);
+    border: 1px solid #2e78f0;
+    border-radius: 5px;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+    box-shadow: 0 2px 8px rgba(21, 96, 189, 0.35);
+}
+
+#db-quick-strategy-btn:hover {
+    filter: brightness(1.12);
+}
+
+.db-blocks-menu-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 4px;
+    color: #e2e8f0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.db-search-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.db-search-wrap svg {
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 13px;
+    height: 13px;
+    color: #64748b;
+    pointer-events: none;
+}
+
+#db-block-search {
+    width: 100%;
+    height: 28px;
+    background: #060b16;
+    border: 1px solid #1c2e52;
+    border-radius: 5px;
+    color: #e2e8f0;
+    font-size: 12px;
+    padding: 0 8px 0 28px;
+    outline: none;
+}
+
+#db-block-search:focus {
+    border-color: #3b82f6;
+}
+
+.blocklyToolboxDiv {
+    position: fixed !important;
+    top: 112px !important;
+    left: 0 !important;
+    bottom: 48px !important;
+    width: 220px !important;
+    height: calc(100% - 160px) !important;
+    background-color: var(--db-bg-panel) !important;
+    border-right: 1px solid var(--db-border) !important;
+    color: #e2e8f0 !important;
+    z-index: 104 !important;
+    overflow-y: auto !important;
+    padding: 4px 0 !important;
+}
+
+.blocklyTreeRoot > .blocklyTreeRow {
+    display: none !important;
+}
+
+.blocklyTreeRow {
+    height: 36px !important;
+    line-height: 36px !important;
+    padding: 0 12px !important;
+    margin: 0 !important;
+    background-color: transparent !important;
+    border-bottom: 1px solid #121e38 !important;
+    box-shadow: none !important;
+    color: #dbeafe !important;
+    display: flex !important;
+    align-items: center !important;
+    cursor: pointer !important;
+    transition: background-color 0.12s ease !important;
+}
+
+.blocklyTreeRow .blocklyTreeLabel {
+    color: #dbeafe !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    font-family: inherit !important;
+}
+
+.blocklyTreeRow:not(.blocklyTreeSelected):hover {
+    background-color: #132344 !important;
+}
+
+.blocklyTreeRow.blocklyTreeSelected {
+    background-color: #162a52 !important;
+    border-left: 3px solid #3b82f6 !important;
+}
+
+.blocklyTreeRow.blocklyTreeSelected .blocklyTreeLabel {
+    color: #ffffff !important;
+}
+
+.blocklyTreeIcon {
+    filter: invert(85%) sepia(20%) saturate(400%) hue-rotate(185deg) !important;
+}
+
+/* 4. Blockly Workspace Area & Floating Action Toolbar (Desktop) */
+#blocklyArea {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: var(--db-right-drawer-width, 330px) !important;
+    bottom: 48px !important;
+    width: calc(100% - var(--db-right-drawer-width, 330px)) !important;
+    height: calc(100% - 48px) !important;
+    margin: 0 !important;
+}
+
+#toolbox {
+    position: fixed !important;
+    top: 10px !important;
+    left: 232px !important;
+    z-index: 112 !important;
+    background: #0c1528 !important;
+    border: 1px solid #1e325c !important;
+    border-radius: 6px !important;
+    padding: 2px 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    height: 36px !important;
+    width: auto !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
+    overflow: visible !important;
+}
+
+#toolbox .toolbox-button {
+    background-color: transparent !important;
+    color: #cbd5e1 !important;
+    width: 32px !important;
+    height: 30px !important;
+    font-size: 14px !important;
+    border-radius: 4px !important;
+    border: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: background-color 0.15s, color 0.15s !important;
+}
+
+#toolbox .toolbox-button:hover {
+    background-color: #17284a !important;
+    color: #ffffff !important;
+}
+
+#toolbox .toolbox-separator {
+    background-color: #1e325c !important;
+    width: 1px !important;
+    height: 16px !important;
+    margin: 0 4px !important;
+}
+
+/* Mobile-only buttons hidden on desktop */
+#db-mobile-blocks-toggle,
+#db-mobile-quick-btn,
+#db-mobile-drawer-handle {
+    display: none;
+}
+
+/* 5. Right Docked Summary / Transactions / Journal Drawer */
+#db-right-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 48px;
+    width: 330px;
+    background: var(--db-bg-panel);
+    border-left: 1px solid var(--db-border);
+    z-index: 115;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease;
+}
+
+body.db-drawer-collapsed #db-right-drawer {
+    transform: translateX(330px);
+}
+
+#db-drawer-collapse-btn {
+    position: absolute;
+    left: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 44px;
+    background: var(--db-bg-panel);
+    border: 1px solid var(--db-border);
+    border-right: none;
+    border-radius: 6px 0 0 6px;
+    color: #94a3b8;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#db-drawer-collapse-btn:hover {
+    color: #ffffff;
+    background: #132344;
+}
+
+.db-drawer-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--db-border);
+    background: #080f1f;
+    flex-shrink: 0;
+}
+
+.db-drawer-tab {
+    flex: 1;
+    height: 38px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #94a3b8;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.db-drawer-tab:hover {
+    color: #e2e8f0;
+}
+
+.db-drawer-tab.active {
+    color: #ffffff;
+    border-bottom-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.db-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.db-empty-state {
+    margin: auto;
+    text-align: center;
+    color: #cbd5e1;
+    font-size: 12.5px;
+    line-height: 1.6;
+    max-width: 240px;
+}
+
+.db-tx-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.db-tx-item {
+    background: #080e1c;
+    border: 1px solid #172646;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 11.5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.db-tx-profit.win {
+    color: #10b981;
+    font-weight: 700;
+}
+
+.db-tx-profit.loss {
+    color: #ef4444;
+    font-weight: 700;
+}
+
+.db-journal-item {
+    padding: 6px 8px;
+    border-bottom: 1px solid #13203b;
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: #cbd5e1;
+}
+
+.db-journal-item.success {
+    color: #34d399;
+}
+
+.db-journal-item.warn {
+    color: #fbbf24;
+}
+
+.db-journal-item.error {
+    color: #f87171;
+}
+
+.db-drawer-stats {
+    border-top: 1px solid var(--db-border);
+    background: #080f1f;
+    padding: 12px;
+    flex-shrink: 0;
+}
+
+.db-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px 6px;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.db-stat-label {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.db-stat-value {
+    font-size: 12px;
+    color: #f8fafc;
+    font-weight: 700;
+}
+
+.db-stat-value.win {
+    color: #10b981;
+}
+
+.db-stat-value.loss {
+    color: #ef4444;
+}
+
+#db-summary-reset-btn {
+    width: 100%;
+    height: 32px;
+    background: transparent;
+    border: 1px solid #243b6b;
+    border-radius: 5px;
+    color: #e2e8f0;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+#db-summary-reset-btn:hover {
+    background: #152546;
+}
+
+/* 6. Bottom Centered Run / Stop + Execution Speed Dock Bar */
+#db-bottom-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 48px;
+    background: var(--db-bg-bottom);
+    border-top: 1px solid var(--db-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 120;
+    padding: 0 16px;
+}
+
+.db-run-dock {
+    display: flex;
+    align-items: center;
+    background: #0d1830;
+    border: 1px solid #1e325c;
+    border-radius: 6px;
+    height: 36px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+}
+
+#db-run-toggle-btn {
+    height: 100%;
+    padding: 0 20px;
+    background: var(--db-teal-run);
+    border: none;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    cursor: pointer;
+    transition: filter 0.15s, background-color 0.15s;
+}
+
+#db-run-toggle-btn:hover {
+    filter: brightness(1.1);
+}
+
+#db-run-toggle-btn.is-running {
+    background: var(--db-red-stop);
+}
+
+.db-speed-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+    height: 100%;
+    cursor: pointer;
+    user-select: none;
+}
+
+.db-speed-labels {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.db-speed-title {
+    font-size: 9.5px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.db-speed-state {
+    font-size: 11px;
+    color: #ffffff;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+.db-speed-switch {
+    width: 34px;
+    height: 18px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 999px;
+    position: relative;
+    transition: background 0.2s;
+}
+
+.db-speed-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #f59e0b;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.db-speed-box.fast .db-speed-switch {
+    background: rgba(21, 158, 131, 0.25);
+    border-color: #159e83;
+}
+
+.db-speed-box.fast .db-speed-switch::after {
+    transform: translateX(16px);
+    background: #10b981;
+}
+
+.db-status-right {
+    position: absolute;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11.5px;
+    color: #cbd5e1;
+    font-weight: 600;
+}
+
+.db-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 6px #10b981;
+}
+
+/* 7. Quick Strategy Modal */
+#db-qs-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(3, 6, 14, 0.78);
+    backdrop-filter: blur(3px);
+    z-index: 500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+#db-qs-modal-backdrop.open {
+    display: flex;
+}
+
+.db-qs-modal {
+    width: 100%;
+    max-width: 440px;
+    background: #0b1326;
+    border: 1px solid #243b6b;
+    border-radius: 10px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
+    overflow: hidden;
+}
+
+.db-qs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: #080f1f;
+    border-bottom: 1px solid #1a2a4a;
+}
+
+.db-qs-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.db-qs-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.db-qs-body {
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.db-qs-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.db-qs-field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+.db-qs-field select,
+.db-qs-field input {
+    height: 36px;
+    background: #060a14;
+    border: 1px solid #1e325c;
+    border-radius: 6px;
+    color: #ffffff;
+    padding: 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.db-qs-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.db-qs-footer {
+    padding: 12px 18px 16px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.db-qs-btn-load {
+    padding: 9px 16px;
+    background: #162a52;
+    border: 1px solid #2e5396;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.db-qs-btn-run {
+    padding: 9px 18px;
+    background: var(--db-teal-run);
+    border: none;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* 8. Mobile Responsive Layout (Matches DBTraders Mobile Screenshot 4) */
+@media (max-width: 768px) {
+    #db-left-panel-header {
+        display: none;
+        z-index: 140;
+        left: 42px;
+    }
+
+    .blocklyToolboxDiv {
+        display: none !important;
+        z-index: 139 !important;
+        left: 42px !important;
+        bottom: 52px !important;
+        height: calc(100% - 164px) !important;
+    }
+
+    body.db-mobile-menu-open #db-left-panel-header {
+        display: flex !important;
+    }
+
+    body.db-mobile-menu-open .blocklyToolboxDiv {
+        display: block !important;
+    }
+
+    /* Slim 42px vertical left icon rail on mobile */
+    #toolbox {
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 52px !important;
+        width: 42px !important;
+        height: calc(100% - 52px) !important;
+        border-radius: 0 !important;
+        border: none !important;
+        border-right: 1px solid var(--db-border) !important;
+        background: var(--db-bg-panel) !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        padding: 8px 0 !important;
+        gap: 6px !important;
+        z-index: 145 !important;
+    }
+
+    #toolbox .toolbox-separator {
+        width: 22px !important;
+        height: 1px !important;
+        margin: 2px 0 !important;
+    }
+
+    #db-mobile-blocks-toggle {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: #162a52;
+        border: 1px solid #2e5396;
+        border-radius: 5px;
+        color: #ffffff;
+        font-size: 16px;
+        cursor: pointer;
+        margin-bottom: 4px;
+    }
+
+    #db-mobile-quick-btn {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        top: 10px;
+        left: 52px;
+        z-index: 120;
+        padding: 7px 14px;
+        background: var(--db-blue-gradient);
+        border: 1px solid #2e78f0;
+        border-radius: 5px;
+        color: #ffffff;
+        font-size: 12.5px;
+        font-weight: 700;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+    }
+
+    #blocklyArea {
+        left: 42px !important;
+        right: 0 !important;
+        bottom: 76px !important;
+        width: calc(100% - 42px) !important;
+        height: calc(100% - 76px) !important;
+    }
+
+    /* Mobile Pull-Up Drawer (Summary | Transactions | Journal) */
+    #db-drawer-collapse-btn {
+        display: none;
+    }
+
+    #db-mobile-drawer-handle {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        height: 24px;
+        background: #0a1224;
+        border-top: 1px solid var(--db-border);
+        border-bottom: 1px solid #13203b;
+        color: #cbd5e1;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    #db-right-drawer {
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 52px;
+        width: 100%;
+        height: 62vh;
+        border-left: none;
+        transform: translateY(calc(100% - 24px));
+        z-index: 148;
+    }
+
+    body.db-mobile-drawer-open #db-right-drawer {
+        transform: translateY(0);
+    }
+
+    #db-bottom-bar {
+        height: 52px;
+        padding: 0 8px;
+        z-index: 150;
+    }
+
+    .db-run-dock {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .db-status-right {
+        display: none;
+    }
+}

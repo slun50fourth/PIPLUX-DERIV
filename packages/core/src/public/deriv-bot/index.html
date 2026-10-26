@@ -3,7 +3,7 @@
 
 <head>
 	<base href="/deriv-bot/">
-	<script src="js/piplux-bridge.js?v=3"></script>
+	<script src="js/piplux-bridge.js?v=4"></script>
 	<link rel="apple-touch-icon" sizes="57x57" href="image/binary-style/favicons/apple-touch-icon-57x57.png">
 	<link rel="apple-touch-icon" sizes="114x114" href="image/binary-style/favicons/apple-touch-icon-114x114.png">
 	<link rel="apple-touch-icon" sizes="72x72" href="image/binary-style/favicons/apple-touch-icon-72x72.png">
@@ -22,9 +22,10 @@
 	<meta http-equiv="pragma" content="no-cache">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>PIPLUX Bot Builder</title>
-	<link href="css/bundle-bbbb3a590f.css?v=3" rel="stylesheet" />
-	<link rel="stylesheet" href="css/binary.css?v=3">
-	<link href="css/bot-0f3b1a8239.css?v=3" rel="stylesheet" />
+	<link href="css/bundle-bbbb3a590f.css?v=4" rel="stylesheet" />
+	<link rel="stylesheet" href="css/binary.css?v=4">
+	<link href="css/bot-0f3b1a8239.css?v=4" rel="stylesheet" />
+	<link href="css/dbtraders-theme.css?v=4" rel="stylesheet" />
 </head>
 
 <body>
@@ -61,43 +62,44 @@
             </div>
         </div>
     </div>
-<div class="barspinner dark">
-    <div class="rect1"></div>
-    <div class="rect2"></div>
-    <div class="rect3"></div>
-    <div class="rect4"></div>
-    <div class="rect5"></div>
-</div>
+    <div class="barspinner dark">
+        <div class="rect1"></div>
+        <div class="rect2"></div>
+        <div class="rect3"></div>
+        <div class="rect4"></div>
+        <div class="rect5"></div>
+    </div>
+
+    <!-- Legacy topbar & header (hidden via dbtraders-theme.css, kept in DOM for bot-min.js) -->
     <div id="topbar">
         <div class="right-header show-on-load">
-<div class="languages">
-  <ul id="display_language">
-    <li>
-      <span class="world world-white"></span>
-      <span class="language"></span>
-      <span class="nav-caret"></span>
-    </li>
-  </ul>
-  <ul id="select_language">
-    <li>
-      <span class="world world-black"></span>
-        <span class="language"></span>
-      <span class="nav-caret"></span>
-    </li>
-    <li class="en">English</li>
-    <li class="de">Deutsch</li>
-    <li class="fr">Français</li>
-    <li class="id">Indonesia</li>
-    <li class="pl">Polish</li>
-    <li class="ru">Русский</li>
-    <li class="zh_cn">简体中文</li>
-    <li class="zh_tw">繁體中文</li>
-  </ul>
-</div>
+            <div class="languages">
+                <ul id="display_language">
+                    <li>
+                        <span class="world world-white"></span>
+                        <span class="language"></span>
+                        <span class="nav-caret"></span>
+                    </li>
+                </ul>
+                <ul id="select_language">
+                    <li>
+                        <span class="world world-black"></span>
+                        <span class="language"></span>
+                        <span class="nav-caret"></span>
+                    </li>
+                    <li class="en">English</li>
+                    <li class="de">Deutsch</li>
+                    <li class="fr">Français</li>
+                    <li class="id">Indonesia</li>
+                    <li class="pl">Polish</li>
+                    <li class="ru">Русский</li>
+                    <li class="zh_cn">简体中文</li>
+                    <li class="zh_tw">繁體中文</li>
+                </ul>
+            </div>
         </div>
         <div id="server-status" class="right-header"></div>
-        <a id="contact-us" class="right-header" target="_blank" href="https://pipluxtrade.com"
-            data-i18n-text="Contact us"></a>
+        <a id="contact-us" class="right-header" target="_blank" href="https://pipluxtrade.com" data-i18n-text="Contact us"></a>
         <div id="server-time" class="right-header"></div>
     </div>
 
@@ -156,11 +158,38 @@
             </div>
         </div>
     </div>
+
+    <!-- DBTraders Left Sidebar Header (Quick Strategy + Blocks menu + Search) -->
+    <div id="db-left-panel-header">
+        <button type="button" id="db-quick-strategy-btn">Quick strategy</button>
+        <div class="db-blocks-menu-title">
+            <span>Blocks menu</span>
+            <span>&#9652;</span>
+        </div>
+        <div class="db-search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="db-block-search" placeholder="Search" autocomplete="off" />
+        </div>
+    </div>
+
+    <!-- Mobile Quick Strategy Floating Button -->
+    <button type="button" id="db-mobile-quick-btn">Quick strategy</button>
+
+    <!-- Workspace Action Toolbar (Floating Top-Left on Desktop, Slim Left Rail on Mobile) -->
     <div id="toolbox" class="actions_menu show-on-load">
+        <button type="button" title="Toggle Blocks Menu" id="db-mobile-blocks-toggle">&#9776;</button>
         <button title="Reset the blocks to their initial state" id="resetButton" class="toolbox-button icon-reset"></button>
         <button title="Load new blocks (xml file)" id="load-xml" class="toolbox-button icon-browse"></button>
         <button title="Save the existing blocks (xml file)" id="save-xml" class="toolbox-button icon-save"></button>
+        <button title="Rearrange Vertically" id="rearrange" class="toolbox-button icon-sort"></button>
         <button title="Connect Binary Bot to your Google Drive to easily save and re-use your blocks" id="integrations" class="toolbox-button icon-integrations invisible"></button>
+
+        <span class="toolbox-separator"></span>
+        <button title="Show chart" id="chartButton" class="toolbox-button icon-chart-line"></button>
+        <button title="Show Trading View" id="tradingViewButton" class="toolbox-button icon-trading-view"></button>
 
         <span class="toolbox-separator"></span>
         <button title="Undo the changes (Ctrl+Z)" id="undo" class="toolbox-button icon-undo"></button>
@@ -169,19 +198,12 @@
         <span class="toolbox-separator"></span>
         <button title="Zoom In (Ctrl + +)" id="zoomIn" class="toolbox-button icon-zoom-in"></button>
         <button title="Zoom Out (Ctrl + -)" id="zoomOut" class="toolbox-button icon-zoom-out"></button>
-        <button title="Rearrange Vertically" id="rearrange" class="toolbox-button icon-sort"></button>
 
-        <span class="toolbox-separator"></span>
+        <!-- Hidden native buttons triggered by DBTraders dock & drawer -->
         <button title="Show/hide the summary pop-up" id="showSummary" class="toolbox-button icon-summary"></button>
         <button title="Run the bot" id="runButton" class="toolbox-button icon-run"></button>
         <button title="Stop the bot" id="stopButton" class="toolbox-button icon-stop"></button>
         <button title="Show log" id="logButton" class="toolbox-button icon-info"></button>
-
-        <span class="toolbox-separator"></span>
-        <button title="Show chart" id="chartButton" class="toolbox-button icon-chart-line"></button>
-        <button title="Show Trading View" id="tradingViewButton" class="toolbox-button icon-trading-view"></button>
-
-        <span class="toolbox-separator"></span>
         <button title="Toggle header" id="toggleHeaderButton" class="toolbox-button icon-hide-header"></button>
 
         <div id="toolbox-account" class="right-header" style="display: none">
@@ -212,9 +234,141 @@
     <div id="blocklyArea"></div>
     <div id="blocklyDiv" style="position: absolute;"></div>
 
+    <!-- DBTraders Right Docked Drawer (Summary | Transactions | Journal) -->
+    <aside id="db-right-drawer">
+        <button type="button" id="db-drawer-collapse-btn" title="Collapse/Expand Panel">&raquo;</button>
+        <div id="db-mobile-drawer-handle" title="Toggle Summary Drawer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+        </div>
+        <div class="db-drawer-tabs">
+            <button type="button" class="db-drawer-tab active" data-tab="summary">Summary</button>
+            <button type="button" class="db-drawer-tab" data-tab="transactions">Transactions</button>
+            <button type="button" class="db-drawer-tab" data-tab="journal">Journal</button>
+        </div>
+        <div class="db-drawer-body" id="db-drawer-body">
+            <div class="db-empty-state" id="db-empty-state">
+                When you're ready to trade, hit <strong>Run</strong>.<br />
+                You'll be able to track your bot's performance here.
+            </div>
+            <div class="db-tx-list" id="db-tx-list" style="display: none;"></div>
+            <div class="db-tx-list" id="db-journal-list" style="display: none;"></div>
+        </div>
+        <div class="db-drawer-stats">
+            <div class="db-stats-grid">
+                <div>
+                    <div class="db-stat-label">Total stake</div>
+                    <div class="db-stat-value" id="db-stat-stake">0.00 USD</div>
+                </div>
+                <div>
+                    <div class="db-stat-label">Total payout</div>
+                    <div class="db-stat-value" id="db-stat-payout">0.00 USD</div>
+                </div>
+                <div>
+                    <div class="db-stat-label">No. of runs</div>
+                    <div class="db-stat-value" id="db-stat-runs">0</div>
+                </div>
+                <div>
+                    <div class="db-stat-label">Contracts lost</div>
+                    <div class="db-stat-value" id="db-stat-lost">0</div>
+                </div>
+                <div>
+                    <div class="db-stat-label">Contracts won</div>
+                    <div class="db-stat-value" id="db-stat-won">0</div>
+                </div>
+                <div>
+                    <div class="db-stat-label">Total profit/loss</div>
+                    <div class="db-stat-value" id="db-stat-profit">0.00 USD</div>
+                </div>
+            </div>
+            <button type="button" id="db-summary-reset-btn">Reset</button>
+        </div>
+    </aside>
+
+    <!-- DBTraders Bottom Run + Execution Speed Dock Bar -->
+    <div id="db-bottom-bar">
+        <div class="db-run-dock">
+            <button type="button" id="db-run-toggle-btn">
+                <span id="db-run-icon">&#9654;</span>
+                <span id="db-run-label">Run</span>
+            </button>
+            <div class="db-speed-box fast" id="db-speed-toggle" title="Toggle Execution Speed">
+                <div class="db-speed-labels">
+                    <span class="db-speed-title">Execution Speed</span>
+                    <span class="db-speed-state" id="db-speed-text">FAST SPEED</span>
+                </div>
+                <div class="db-speed-switch"></div>
+            </div>
+        </div>
+        <div class="db-status-right">
+            <span class="db-status-dot"></span>
+            <span id="db-clock-text">2026-10-26 19:55:00 GMT</span>
+            <span>&#127760; EN</span>
+        </div>
+    </div>
+
+    <!-- Quick Strategy Modal -->
+    <div id="db-qs-modal-backdrop">
+        <div class="db-qs-modal">
+            <div class="db-qs-header">
+                <h3>&#9889; Quick Strategy</h3>
+                <button type="button" class="db-qs-close" id="db-qs-close">&times;</button>
+            </div>
+            <div class="db-qs-body">
+                <div class="db-qs-field">
+                    <label for="db-qs-preset">Strategy Template</label>
+                    <select id="db-qs-preset">
+                        <option value="/bots/Apex_Range_AI.xml">Apex Range AI (Digits Over/Under + Martingale)</option>
+                        <option value="/bots/Apex_AI.xml">Apex AI (Digits Over/Under Strategy)</option>
+                        <option value="/bots/entry_scanner_template.xml">AI Entry Point Digit Scanner</option>
+                    </select>
+                </div>
+                <div class="db-qs-field">
+                    <label for="db-qs-symbol">Market Symbol</label>
+                    <select id="db-qs-symbol">
+                        <option value="1HZ100V">Volatility 100 (1s) Index</option>
+                        <option value="1HZ75V">Volatility 75 (1s) Index</option>
+                        <option value="1HZ50V">Volatility 50 (1s) Index</option>
+                        <option value="1HZ25V">Volatility 25 (1s) Index</option>
+                        <option value="1HZ10V">Volatility 10 (1s) Index</option>
+                        <option value="R_100">Volatility 100 Index</option>
+                        <option value="R_75">Volatility 75 Index</option>
+                        <option value="R_50">Volatility 50 Index</option>
+                        <option value="R_25">Volatility 25 Index</option>
+                        <option value="R_10">Volatility 10 Index</option>
+                    </select>
+                </div>
+                <div class="db-qs-row">
+                    <div class="db-qs-field">
+                        <label for="db-qs-stake">Initial Stake (USD)</label>
+                        <input type="number" id="db-qs-stake" value="1" min="0.35" step="0.1" />
+                    </div>
+                    <div class="db-qs-field">
+                        <label for="db-qs-martingale">Martingale Multiplier</label>
+                        <input type="number" id="db-qs-martingale" value="2" min="1" step="0.1" />
+                    </div>
+                </div>
+                <div class="db-qs-row">
+                    <div class="db-qs-field">
+                        <label for="db-qs-tp">Take Profit (USD)</label>
+                        <input type="number" id="db-qs-tp" value="10" min="1" step="1" />
+                    </div>
+                    <div class="db-qs-field">
+                        <label for="db-qs-sl">Stop Loss (USD)</label>
+                        <input type="number" id="db-qs-sl" value="50" min="1" step="1" />
+                    </div>
+                </div>
+            </div>
+            <div class="db-qs-footer">
+                <button type="button" class="db-qs-btn-load" id="db-qs-load-btn">Load Strategy</button>
+                <button type="button" class="db-qs-btn-run" id="db-qs-run-btn">&#9654; Load &amp; Run</button>
+            </div>
+        </div>
+    </div>
+
     <form id="fileUploadForm" style="display: none;">
-        <input title="Open an already saved XML file and retrieve its blocks" type="file" id="files" accept=".xml"
-            multiple />
+        <input title="Open an already saved XML file and retrieve its blocks" type="file" id="files" accept=".xml" multiple />
     </form>
     <div id="footer" style="display: none;"></div>
     <audio id="announcement" src="sound/announcement.ogg" autostart="false"></audio>
@@ -222,10 +376,10 @@
     <audio id="job-done" src="sound/job-done.ogg" autostart="false"></audio>
     <audio id="error" src="sound/out-of-bounds.ogg" autostart="false"></audio>
     <audio id="severe-error" src="sound/i-am-being-serious.ogg" autostart="false"></audio>
-    <script src="js/bundle-ca910a23e2.js?v=3"></script>
-    <script src="js/bot-e035ddd5ec.min.js?v=3"></script>
-    <div class="notifyjs-corner" style="bottom: 0px; right: 0px;"></div>
-    <div class="notifyjs-corner" style="bottom: 0px; left: 0px;"></div>
+    <script src="js/bundle-ca910a23e2.js?v=4"></script>
+    <script src="js/bot-e035ddd5ec.min.js?v=4"></script>
+    <div class="notifyjs-corner" style="bottom: 54px; right: 0px;"></div>
+    <div class="notifyjs-corner" style="bottom: 54px; left: 0px;"></div>
 </body>
 
 </html>

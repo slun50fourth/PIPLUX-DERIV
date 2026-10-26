@@ -28,7 +28,7 @@ import './bot-builder.scss';
 const BOT_BUILDER_URL: string =
     (window as any).__PIPLUX_BOT_BUILDER_URL__ ||
     process.env.REACT_APP_BOT_BUILDER_URL ||
-    '/deriv-bot/bot.html?v=3';
+    '/deriv-bot/bot.html?v=4';
 
 // The origin we'll trust for postMessages from the child iframe
 const botOrigin = (() => {
@@ -294,8 +294,8 @@ const BotBuilder: React.FC = observer(() => {
                 </button>
             </div>
 
-            {/* ── Builder Tab ── */}
-            {activeTab === 'builder' && (
+            {/* ── Builder Tab (kept mounted so tab switches preserve workspace state) ── */}
+            <div style={{ display: activeTab === 'builder' ? 'flex' : 'none', flex: 1, minHeight: 0, width: '100%' }}>
                 <BotBuilderBridge
                     pendingXml={pendingXml}
                     pendingRun={pendingRun}
@@ -304,7 +304,7 @@ const BotBuilder: React.FC = observer(() => {
                         setPendingRun(false);
                     }}
                 />
-            )}
+            </div>
 
             {/* ── Free Bots Tab ── */}
             {activeTab === 'free_bots' && (

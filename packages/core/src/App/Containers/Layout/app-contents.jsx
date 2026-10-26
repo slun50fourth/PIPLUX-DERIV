@@ -16,6 +16,7 @@ const AppContents = observer(({ children, isLandingPage }) => {
     const { isDesktop, isMobile } = useDevice();
     const location = useLocation();
     const has_access_denied_error = location.search.includes('access_denied');
+    const is_bot_page = location?.pathname?.startsWith('/bot');
 
     const { is_logged_in, is_logging_in, should_redirect_user_to_login, setShouldRedirectToLogin } = client;
     const {
@@ -98,8 +99,8 @@ const AppContents = observer(({ children, isLandingPage }) => {
             })}
             ref={scroll_ref}
         >
-            {isMobile && children}
-            {!isMobile && (
+            {(isMobile || is_bot_page) && children}
+            {!isMobile && !is_bot_page && (
                 /* Calculate height of user screen and offset height of header and footer */
                 <ThemedScrollbars height={isDesktop ? '100vh' : undefined} has_horizontal refSetter={child_ref}>
                     {children}
