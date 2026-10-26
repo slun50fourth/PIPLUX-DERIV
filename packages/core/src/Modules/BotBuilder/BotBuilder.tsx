@@ -19,6 +19,7 @@ import { observer } from 'mobx-react-lite';
 import { routes } from '@deriv/shared';
 import { useStore } from '@deriv/stores';
 import { botBuilderBus } from 'Services/bot-builder-bus';
+import { getStoredToken } from 'Services/oauth';
 import './bot-builder.scss';
 
 // ---------------------------------------------------------------------------
@@ -28,7 +29,7 @@ import './bot-builder.scss';
 const BOT_BUILDER_URL: string =
     (window as any).__PIPLUX_BOT_BUILDER_URL__ ||
     process.env.REACT_APP_BOT_BUILDER_URL ||
-    '/deriv-bot/bot.html?v=4';
+    '/deriv-bot/bot.html?v=6';
 
 // The origin we'll trust for postMessages from the child iframe
 const botOrigin = (() => {
@@ -48,25 +49,46 @@ const botOrigin = (() => {
 function buildAuthPayload(client: any) {
     const accounts: Record<string, { token: string; currency: string; is_virtual: boolean }> = {};
     const accountList: Array<any> = client.account_list || [];
+    const storedToken =
+        getStoredToken() ||
+        client.getToken?.() ||
+        client.token ||
+        localStorage.getItem('authToken') ||
+        '';
+    const activeLoginId =
+        client.loginid ||
+        sessionStorage.getItem('active_loginid') ||
+        localStorage.getItem('active_loginid') ||
+        '';
 
     accountList.forEach((acc: any) => {
-        if (acc.loginid && acc.token) {
-            accounts[acc.loginid] = {
-                token: acc.token,
+        const id = acc.loginid || acc.account_id;
+        const tok = acc.token || storedToken;
+        if (id && tok) {
+            accounts[id] = {
+                token: tok,
                 currency: acc.currency || 'USD',
-                is_virtual: acc.is_virtual ?? false,
+                is_virtual: acc.is_virtual ?? id.startsWith('VR'),
             };
         }
     });
+
+    if (activeLoginId && storedToken && !accounts[activeLoginId]) {
+        accounts[activeLoginId] = {
+            token: storedToken,
+            currency: client.currency || 'USD',
+            is_virtual: activeLoginId.startsWith('VR'),
+        };
+    }
 
     return {
         type: 'newdtrader:auth',
         version: 'v2',
         auth: {
-            access_token: client.getToken?.() || client.token || '',
+            access_token: storedToken,
             expires_at: Date.now() + 60 * 60 * 1000, // 1h fallback
         },
-        activeAccountId: client.loginid || '',
+        activeAccountId: activeLoginId,
         accounts,
         otpUrl: null,
     };
@@ -178,7 +200,11 @@ const BotBuilderBridge: React.FC<BotBuilderBridgeProps> = observer(
                     title='PIPLUX Bot Builder'
                     sandbox='allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads'
                     allow='clipboard-read; clipboard-write'
-                    onLoad={() => setIsLoading(false)}
+                    onLoad={() => {
+                        setIsLoading(false);
+                        setIsReady(true);
+                        sendAuth();
+                    }}
                 />
             </div>
         );
