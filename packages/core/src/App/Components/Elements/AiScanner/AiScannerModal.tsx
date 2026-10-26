@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
+import { useHistory } from 'react-router-dom';
+import { routes } from '@deriv/shared';
+import { botBuilderBus } from 'Services/bot-builder-bus';
 import './ai-scanner.scss';
 import WS from 'Services/ws-methods';
 import { useStore } from '@deriv/stores';
@@ -27,6 +30,7 @@ type ViewMode = 'closed' | 'choose' | 'entry_scanner' | 'pro_ai';
 
 export const AiScannerModal: React.FC = () => {
   const store = useStore();
+  const history = useHistory();
   const currency = store?.client?.currency || 'USD';
 
   const [isOpen, setIsOpen] = useState(false);
@@ -213,6 +217,46 @@ export const AiScannerModal: React.FC = () => {
     }
   };
 
+  // Helper to construct full bot XML
+  const getEntryScannerXml = async (res: ScanResult): Promise<string> => {
+    let template = '';
+    try {
+      const response = await fetch('/bots/entry_scanner_template.xml');
+      if (response.ok) {
+        template = await response.text();
+      }
+    } catch (e) {
+      console.warn('Could not fetch /bots/entry_scanner_template.xml:', e);
+    }
+
+    if (!template) {
+      template = `<xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true" collection="false"></xml>`;
+    }
+
+    return buildBotXml(template, res, {
+      tickCount: ticksCount,
+      stake: params.stake || 0.5,
+      martingale: params.martingale || 2,
+      numberOfWins: params.numberOfWins || 5,
+      stopLoss: params.stopLoss || 50,
+      useMartingale: params.useMartingale ?? true,
+    });
+  };
+
+  const handleOpenInBotBuilder = async () => {
+    if (!bestResult) return;
+    setShowParamsPopup(false);
+    setIsOpen(false);
+    try {
+      const xml = await getEntryScannerXml(bestResult);
+      injectXmlIntoBlockly(xml);
+      botBuilderBus.loadXml(xml, { autoRun: false });
+    } catch (e) {
+      console.warn('Error loading into bot builder:', e);
+    }
+    history.push(routes.bot);
+  };
+
   // Called when "Load and Run Bot" is clicked in Entry Scanner view
   const handleOpenParameters = () => {
     if (!bestResult) return;
@@ -236,20 +280,13 @@ export const AiScannerModal: React.FC = () => {
     sound.playSuccess();
     sound.speak(`Scanner bot loaded for ${bestResult.symbol}. Trade engine is ready.`);
 
-    // 1. If Blockly exists, populate workspace
+    // 1. If Blockly exists, populate workspace and sync to Bot Builder
     try {
-      const templateXml = `<xml xmlns="https://developers.google.com/blockly/xml" is_dbot="true" collection="false"></xml>`;
-      buildBotXml(templateXml, bestResult, {
-        tickCount: ticksCount,
-        stake: params.stake || 0.5,
-        martingale: params.martingale || 2,
-        numberOfWins: params.numberOfWins || 5,
-        stopLoss: params.stopLoss || 50,
-        useMartingale: params.useMartingale ?? true,
-      });
-      injectXmlIntoBlockly(templateXml);
+      const fullXml = await getEntryScannerXml(bestResult);
+      injectXmlIntoBlockly(fullXml);
+      botBuilderBus.loadXml(fullXml, { autoRun: true });
     } catch {
-      // Blockly not present or not on DBot page — fallback to direct execution
+      // Blockly not present or not on DBot page â€” fallback to direct execution
     }
 
     // 2. Start direct WebSocket trade execution
@@ -441,7 +478,7 @@ export const AiScannerModal: React.FC = () => {
                 onClick={() => setIsOpen(false)}
                 disabled={isScanning}
               >
-                ✕
+                âœ•
               </button>
             </div>
 
@@ -462,7 +499,7 @@ export const AiScannerModal: React.FC = () => {
                       <h3>Entry Scanner</h3>
                       <p>Find a market and load its settings into your bot.</p>
                     </div>
-                    <span className="ai-choice-view__arrow">→</span>
+                    <span className="ai-choice-view__arrow">â†’</span>
                   </div>
 
                   {/* Option 2: Pro AI */}
@@ -475,7 +512,7 @@ export const AiScannerModal: React.FC = () => {
                       <h3>Pro AI</h3>
                       <p>Scan eligible markets and execute trades with automatic recovery selection.</p>
                     </div>
-                    <span className="ai-choice-view__arrow">→</span>
+                    <span className="ai-choice-view__arrow">â†’</span>
                   </div>
                 </div>
               )}
@@ -489,7 +526,7 @@ export const AiScannerModal: React.FC = () => {
                     onClick={() => setView('choose')}
                     disabled={isScanning}
                   >
-                    ← Scanner options
+                    â† Scanner options
                   </button>
 
                   {/* Top Radar / HUD Graphic */}
@@ -656,7 +693,7 @@ export const AiScannerModal: React.FC = () => {
                     onClick={() => setView('choose')}
                     disabled={proAiScanning}
                   >
-                    ← Scanner options
+                    â† Scanner options
                   </button>
 
                   <div className="radar-hud">
@@ -855,6 +892,25 @@ export const AiScannerModal: React.FC = () => {
                 onClick={() => setShowParamsPopup(false)}
               >
                 Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-builder"
+                onClick={handleOpenInBotBuilder}
+                title="Send bot XML to Blockly Bot Builder"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #38bdf8',
+                  color: '#38bdf8',
+                  borderRadius: 8,
+                  padding: '8px 14px',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  marginRight: 8,
+                }}
+              >
+                🤖 Bot Builder
               </button>
               <button
                 type="button"

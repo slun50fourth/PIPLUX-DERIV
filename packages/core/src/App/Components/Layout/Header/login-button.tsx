@@ -31,7 +31,7 @@ const LoginButton = observer(({ className }: LoginButtonV2Props) => {
     );
 });
 
-LoginButton.propTypes = {
+(LoginButton as any).propTypes = {
     className: PropTypes.string,
 };
 

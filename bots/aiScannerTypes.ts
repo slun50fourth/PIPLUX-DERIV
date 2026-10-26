@@ -134,8 +134,8 @@ export interface ProAiConfig {
 export interface ProAiCallbacks {
   onScanComplete?: (setup: ProAiSetup) => void;
   onTick?: (digit: number, price: number) => void;
-  onEntry?: (digit: number, contract: ContractSpec, stake: number) => void;
-  onTradeResult?: (won: boolean, profit: number, balance: number, consecutiveWins: number) => void;
+  onEntry?: (digit: number, contract?: ContractSpec, stake?: number) => void;
+  onTradeResult?: (won: boolean, profit: number, balance?: number, consecutiveWins?: number) => void;
   onRecovery?: (spec: ContractSpec, stake: number) => void;
   onSessionEnd?: (reason: 'takeProfit' | 'stopLoss' | 'stopped' | 'error', pnl: number) => void;
   onError?: (err: Error) => void;

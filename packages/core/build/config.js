@@ -74,6 +74,7 @@ const copyConfig = base => {
             toType: 'file',
         },
         { from: path.resolve(__dirname, '../src/public/images/favicons/'), to: 'public/images/favicons/' },
+        { from: path.resolve(__dirname, '../src/public/bots/'), to: 'bots', noErrorOnMissing: true },
         {
             from: path.resolve(__dirname, '../src/public/images/common/static_images/'),
             to: 'public/images/common',

@@ -13,7 +13,6 @@ const REMOVED_ROUTE_PATTERNS = [
     /^\/settings\/.*/,
     /^\/mt5\/.*/,
     /^\/derivx\/.*/,
-    /^\/bot\/.*/,
     /^\/account-closed\/?$/,
     /^\/complaints-policy\/?$/,
     /^\/onboarding\/?$/,

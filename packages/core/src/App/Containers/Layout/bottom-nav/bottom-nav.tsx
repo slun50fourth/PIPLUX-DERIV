@@ -45,6 +45,46 @@ const BottomNav = observer(({ className }: BottomNavProps) => {
                 label: <Localize i18n_default_text='Trade' />,
                 path: routes.trader,
             },
+            {
+                icon: (
+                    <svg
+                        width='18'
+                        height='18'
+                        viewBox='0 0 24 24'
+                        fill='none'
+                        stroke='var(--color-text-primary)'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                    >
+                        <rect x='3' y='11' width='18' height='10' rx='2' />
+                        <circle cx='12' cy='5' r='2' />
+                        <path d='M12 7v4' />
+                        <line x1='8' y1='16' x2='8.01' y2='16' />
+                        <line x1='16' y1='16' x2='16.01' y2='16' />
+                    </svg>
+                ),
+                activeIcon: (
+                    <svg
+                        width='18'
+                        height='18'
+                        viewBox='0 0 24 24'
+                        fill='none'
+                        stroke='var(--brand-red-coral, #ff444f)'
+                        strokeWidth='2.2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                    >
+                        <rect x='3' y='11' width='18' height='10' rx='2' />
+                        <circle cx='12' cy='5' r='2' />
+                        <path d='M12 7v4' />
+                        <line x1='8' y1='16' x2='8.01' y2='16' />
+                        <line x1='16' y1='16' x2='16.01' y2='16' />
+                    </svg>
+                ),
+                label: <Localize i18n_default_text='Bot' />,
+                path: routes.bot,
+            },
             ...(is_logged_in
                 ? [
                       {
@@ -69,6 +109,10 @@ const BottomNav = observer(({ className }: BottomNavProps) => {
     const selectedIndex = React.useMemo(() => {
         if (matchPath(location.pathname, { path: routes.contract, exact: true })) {
             return -1; // No icon highlighted for contract details page
+        }
+        if (location.pathname === routes.bot || location.pathname.startsWith(`${routes.bot}/`)) {
+            const botIdx = bottomNavItems.findIndex(item => item.path === routes.bot);
+            if (botIdx > -1) return botIdx;
         }
         if (
             location.pathname === routes.reports ||

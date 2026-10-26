@@ -17,6 +17,8 @@ const Reports = React.lazy(() => import(/* webpackChunkName: "reports" */ '@deri
 
 const LandingPage = React.lazy(() => import(/* webpackChunkName: "landing-page" */ 'Modules/LandingPage'));
 
+const BotBuilder = React.lazy(() => import(/* webpackChunkName: "bot-builder" */ 'Modules/BotBuilder'));
+
 const getModules = () => {
     const modules = [
         {
@@ -74,6 +76,12 @@ const getModules = () => {
             path: routes.trader,
             component: Trader,
             getTitle: () => localize('Trader'),
+            protected: false,
+        },
+        {
+            path: routes.bot,
+            component: BotBuilder,
+            getTitle: () => localize('Bot Builder'),
             protected: false,
         },
         {
