@@ -1,10 +1,11 @@
 import React from 'react';
+import { useHistory } from 'react-router-dom';
 import clsx from 'clsx';
 import { observer } from 'mobx-react-lite';
 
 import { useLocalStorageData } from '@deriv/api';
 import { Loading } from '@deriv/components';
-import { getSymbolDisplayName } from '@deriv/shared';
+import { getSymbolDisplayName, routes } from '@deriv/shared';
 import { useStore } from '@deriv/stores';
 import { Loader } from '@deriv-com/ui';
 
@@ -34,6 +35,7 @@ import TradeTypes from './trade-types';
 
 const TradeDesktop = observer(() => {
     const chart_ref = React.useRef<HTMLDivElement>(null);
+    const history = useHistory();
     const {
         client,
         common: { current_language, network_status },
@@ -140,6 +142,29 @@ const TradeDesktop = observer(() => {
                         >
                             <span className='trade__ai-scanner-pulse' />
                             AI Scanner
+                        </button>
+                        <button
+                            type='button'
+                            className='trade__bot-builder-btn'
+                            onClick={() => history.push(routes.bot)}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 14px',
+                                background: 'rgba(255, 68, 79, 0.12)',
+                                border: '1px solid rgba(255, 68, 79, 0.5)',
+                                borderRadius: '18px',
+                                color: '#ff444f',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                margin: '0 8px',
+                                transition: 'all 0.2s ease',
+                            }}
+                        >
+                            <span>🤖</span>
+                            <span>Bot Builder</span>
                         </button>
                         <AccountHeader />
                     </div>

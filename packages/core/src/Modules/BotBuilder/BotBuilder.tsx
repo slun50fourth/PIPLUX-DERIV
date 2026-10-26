@@ -14,7 +14,9 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
+import { routes } from '@deriv/shared';
 import { useStore } from '@deriv/stores';
 import { botBuilderBus } from 'Services/bot-builder-bus';
 import './bot-builder.scss';
@@ -209,6 +211,7 @@ const FREE_BOTS = [
 ];
 
 const BotBuilder: React.FC = observer(() => {
+    const history = useHistory();
     const [activeTab, setActiveTab] = useState<Tab>('builder');
     const [pendingXml, setPendingXml] = useState<string | null>(null);
     const [pendingRun, setPendingRun] = useState(false);
@@ -261,6 +264,13 @@ const BotBuilder: React.FC = observer(() => {
         <div className='bot-builder-page'>
             {/* ── Tab Bar ── */}
             <div className='bot-builder-page__tabs'>
+                <button
+                    className='bot-builder-page__back-btn'
+                    onClick={() => history.push(routes.trader)}
+                    title='Return to Manual Trading chart'
+                >
+                    ← Manual Trader
+                </button>
                 <button
                     className={`bot-builder-page__tab ${activeTab === 'builder' ? 'bot-builder-page__tab--active' : ''}`}
                     onClick={() => setActiveTab('builder')}

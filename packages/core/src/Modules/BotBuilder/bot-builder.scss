@@ -16,6 +16,29 @@
         background: var(--general-main-2, #12121f);
         flex-shrink: 0;
         padding: 0 16px;
+        align-items: center;
+    }
+
+    &__back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        margin: 6px 16px 6px 0;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid var(--general-section-1, #2a2a3e);
+        border-radius: 6px;
+        color: var(--text-general, #e2e8f0);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            border-color: var(--brand-red-coral, #ff444f);
+        }
     }
 
     &__tab {

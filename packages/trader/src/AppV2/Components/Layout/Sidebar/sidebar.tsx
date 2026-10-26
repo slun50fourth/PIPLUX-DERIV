@@ -95,6 +95,11 @@ const Sidebar = observer(() => {
         setSidebarFlyout(active_sidebar_flyout === 'positions' ? null : 'positions');
     };
 
+    const handleBotBuilderClick = () => {
+        closeSidebarFlyout();
+        history.push(routes.bot);
+    };
+
     const handleReportsClick = () => {
         setSidebarFlyout(null);
         history.push(routes.reports);
@@ -142,6 +147,31 @@ const Sidebar = observer(() => {
             onClick: handleAiScannerToggle,
             isActive: isAiScannerActive,
             dataTestId: 'dt_sidebar_ai_scanner',
+        },
+        {
+            id: 'bot_builder',
+            icon: (
+                <svg
+                    width='18'
+                    height='18'
+                    viewBox='0 0 24 24'
+                    fill='none'
+                    stroke='var(--color-text-primary)'
+                    strokeWidth='2'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                >
+                    <rect x='3' y='11' width='18' height='10' rx='2' />
+                    <circle cx='12' cy='5' r='2' />
+                    <path d='M12 7v4' />
+                    <line x1='8' y1='16' x2='8.01' y2='16' />
+                    <line x1='16' y1='16' x2='16.01' y2='16' />
+                </svg>
+            ),
+            label: localize('Bot Builder'),
+            onClick: handleBotBuilderClick,
+            isActive: isActiveRoute(routes.bot),
+            dataTestId: 'dt_sidebar_bot_builder',
         },
         {
             id: 'positions',
