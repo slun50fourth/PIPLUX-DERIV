@@ -28,11 +28,14 @@ import './bot-builder.scss';
 const BOT_BUILDER_URL: string =
     (window as any).__PIPLUX_BOT_BUILDER_URL__ ||
     process.env.REACT_APP_BOT_BUILDER_URL ||
-    'https://piplux-bot.pages.dev';
+    '/deriv-bot/bot.html';
 
 // The origin we'll trust for postMessages from the child iframe
 const botOrigin = (() => {
     try {
+        if (BOT_BUILDER_URL.startsWith('/')) {
+            return window.location.origin;
+        }
         return new URL(BOT_BUILDER_URL).origin;
     } catch {
         return '*';
