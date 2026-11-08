@@ -14,3 +14,4 @@ import './Binary/Trade Definition';
 import './Logic';
 import './Math';
 import './Text';
+import './custom-blocks';

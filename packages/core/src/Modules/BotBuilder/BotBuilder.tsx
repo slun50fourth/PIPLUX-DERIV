@@ -197,8 +197,13 @@ const BotBuilder: React.FC = observer(() => {
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
-            const xml = ev.target?.result as string;
-            if (xml) {
+            const content = ev.target?.result as string;
+            if (content) {
+                let xml = content;
+                const match = content.match(/<xml[\s\S]*?<\/xml>/i);
+                if (match) {
+                    xml = match[0];
+                }
                 setPendingXml(xml);
                 setPendingRun(false);
                 setActiveTab('builder');
@@ -236,7 +241,7 @@ const BotBuilder: React.FC = observer(() => {
                     className={`bot-builder-page__tab ${activeTab === 'upload' ? 'bot-builder-page__tab--active' : ''}`}
                     onClick={() => setActiveTab('upload')}
                 >
-                    ⬆️ Upload XML
+                    ⬆️ Upload XML/HTML
                 </button>
             </div>
 
@@ -283,29 +288,29 @@ const BotBuilder: React.FC = observer(() => {
             {/* ── Upload Tab ── */}
             {activeTab === 'upload' && (
                 <div className='bot-builder-page__upload'>
-                    <h2>Upload Your Bot XML</h2>
-                    <p>Select a <code>.xml</code> file exported from DBot or any compatible Blockly workspace.</p>
+                    <h2>Upload Your Bot File</h2>
+                    <p>Select a <code>.xml</code> or <code>.html</code> bot file (supports DBot XML and Microsoft Edge HTML Documents).</p>
                     <div className='bot-builder-page__upload-zone'>
                         <div className='bot-builder-page__upload-icon'>📂</div>
                         <p>Drag & drop or click to select</p>
                         <input
                             ref={fileInputRef}
                             type='file'
-                            accept='.xml'
+                            accept='.xml,.html,.htm,text/xml,text/html'
                             className='bot-builder-page__upload-input'
                             onChange={handleUpload}
                             id='bot-xml-upload'
                         />
                         <label htmlFor='bot-xml-upload' className='bot-builder-page__upload-btn'>
-                            Choose XML File
+                            Choose XML or HTML Bot File
                         </label>
                     </div>
                     <div className='bot-builder-page__upload-tips'>
-                        <h4>Tips</h4>
+                        <h4>Supported Formats</h4>
                         <ul>
-                            <li>Export your bot from DBot as an XML file.</li>
-                            <li>The file will be loaded into the Bot Builder workspace.</li>
-                            <li>You can edit it before running.</li>
+                            <li>Deriv DBot and Binary Bot XML files (<code>.xml</code>).</li>
+                            <li>Microsoft Edge HTML Document bot files (<code>.html</code>, <code>.htm</code>).</li>
+                            <li>Files are loaded directly into the visual Bot Builder workspace.</li>
                         </ul>
                     </div>
                 </div>

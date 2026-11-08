@@ -50,6 +50,7 @@ const ContractCardHeader = ({
     onClickSell,
     server_time,
 }: TContractCardHeaderProps) => {
+    if (!contract_info) return null;
     const current_tick = contract_info.tick_count ? getCurrentTick(contract_info) : null;
     const {
         growth_rate,

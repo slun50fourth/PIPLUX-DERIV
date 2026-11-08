@@ -212,7 +212,13 @@ export default class RunPanelStore {
 
             summary_card.clear();
             this.setContractStage(contract_stages.STARTING);
-            this.dbot.runBot();
+            try {
+                this.dbot.runBot();
+            } catch (err) {
+                console.error('[run-panel-store] runBot failed:', err);
+                this.setIsRunning(false);
+                this.setContractStage(contract_stages.NOT_RUNNING);
+            }
         });
         this.setShowBotStopMessage(false);
     };

@@ -38,6 +38,7 @@ const CardFooter = ({
 }: TCardFooterPropTypes) => {
     const { in_prop } = useNewRowTransition(!!should_show_transition);
 
+    if (!contract_info) return null;
     const is_valid_to_cancel = isValidToCancel(contract_info);
 
     const should_show_sell = hasContractEntered(contract_info) && isOpen(contract_info);

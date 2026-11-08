@@ -27,7 +27,7 @@ const SummaryCard = observer(({ contract_info, is_contract_loading, is_bot_runni
         return cleanup;
     }, [is_contract_loading]);
 
-    const card_header = (
+    const card_header = contract_info ? (
         <ContractCard.Header
             contract_info={contract_info}
             display_name={
@@ -41,9 +41,9 @@ const SummaryCard = observer(({ contract_info, is_contract_loading, is_bot_runni
             is_sold={is_contract_completed}
             server_time={server_time}
         />
-    );
+    ) : null;
 
-    const card_body = (
+    const card_body = contract_info ? (
         <ContractCard.Body
             addToast={addToast}
             contract_info={contract_info}
@@ -60,9 +60,9 @@ const SummaryCard = observer(({ contract_info, is_contract_loading, is_bot_runni
             server_time={server_time}
             setCurrentFocus={setCurrentFocus}
         />
-    );
+    ) : null;
 
-    const card_footer = (
+    const card_footer = contract_info ? (
         <ContractCard.Footer
             contract_info={contract_info}
             getCardLabels={getCardLabels}
@@ -70,15 +70,15 @@ const SummaryCard = observer(({ contract_info, is_contract_loading, is_bot_runni
             is_sell_requested={is_sell_requested}
             onClickSell={onClickSell}
         />
-    );
+    ) : null;
 
-    const contract_el = (
+    const contract_el = contract_info ? (
         <React.Fragment>
             {card_header}
             {card_body}
             {card_footer}
         </React.Fragment>
-    );
+    ) : null;
 
     return (
         <div

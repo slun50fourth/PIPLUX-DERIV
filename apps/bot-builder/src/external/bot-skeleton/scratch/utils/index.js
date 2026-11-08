@@ -164,6 +164,14 @@ export const load = async ({
         };
     };
 
+    // Support files with HTML wrappers (e.g. Microsoft Edge HTML Document exports)
+    if (typeof block_string === 'string') {
+        const xml_match = block_string.match(/<xml[\s\S]*?<\/xml>/i);
+        if (xml_match) {
+            block_string = xml_match[0];
+        }
+    }
+
     // Check if XML can be parsed correctly.
     try {
         const xmlDoc = new DOMParser().parseFromString(block_string, 'application/xml');
@@ -185,6 +193,9 @@ export const load = async ({
     }
     const blockConversion = new BlockConversion();
     xml = blockConversion.convertStrategy(xml, showIncompatibleStrategyDialog);
+    // Normalize legacy math_number_positive to math_number
+    xml.querySelectorAll('[type="math_number_positive"]').forEach(el => el.setAttribute('type', 'math_number'));
+
     const blockly_xml = xml.querySelectorAll('block');
 
     // Check if there are any blocks in this strategy.
@@ -195,7 +206,8 @@ export const load = async ({
     // Check if all block types in XML are allowed.
     const has_invalid_blocks = Array.from(blockly_xml).some(block => {
         const block_type = block.getAttribute('type');
-        return !Object.keys(window.Blockly.Blocks).includes(block_type);
+        const known_custom_blocks = ['apollo_purchase', 'apollo_purchase2', 'last_digits_condition', 'even_odd_analysis', 'math_number_positive'];
+        return !Object.keys(window.Blockly.Blocks).includes(block_type) && !known_custom_blocks.includes(block_type);
     });
     if (has_invalid_blocks) {
         return showInvalidStrategyError();

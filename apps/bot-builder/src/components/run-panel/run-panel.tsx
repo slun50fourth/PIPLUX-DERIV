@@ -179,15 +179,83 @@ const DrawerFooter = ({ is_clear_stat_disabled, onClearStatClick }: TDrawerFoote
     </div>
 );
 
-const MobileDrawerFooter = () => {
+const MobileBottomDock = observer(() => {
+    const { run_panel } = useStore();
+    const {
+        is_running,
+        is_stop_button_visible,
+        is_drawer_open,
+        toggleDrawer,
+        onRunButtonClick,
+        onStopButtonClick,
+    } = run_panel;
+
+    const [isFast, setIsFast] = React.useState(() => {
+        try {
+            return localStorage.getItem('bot_execution_speed') !== 'normal';
+        } catch {
+            return true;
+        }
+    });
+
+    const toggleSpeed = () => {
+        const next = !isFast;
+        setIsFast(next);
+        try {
+            localStorage.setItem('bot_execution_speed', next ? 'fast' : 'normal');
+            (window as any).__FAST_EXECUTION__ = next;
+        } catch {
+            // ignore
+        }
+    };
+
+    const isRunning = is_running || is_stop_button_visible;
+
     return (
-        <div className='controls__section'>
-            <div className='controls__buttons'>
-                <TradeAnimation className='controls__animation' should_show_overlay />
+        <div className='mobile-bottom-dock'>
+            <button
+                type='button'
+                className='mobile-bottom-dock__chevron-btn'
+                onClick={() => toggleDrawer(!is_drawer_open)}
+                aria-label='Toggle stats drawer'
+            >
+                <span
+                    className={classNames('mobile-bottom-dock__chevron', {
+                        'mobile-bottom-dock__chevron--open': is_drawer_open,
+                    })}
+                />
+            </button>
+            <div className='mobile-bottom-dock__content'>
+                <button
+                    type='button'
+                    className={classNames('mobile-bottom-dock__run-btn', {
+                        'mobile-bottom-dock__run-btn--running': isRunning,
+                    })}
+                    onClick={() => (isRunning ? onStopButtonClick() : onRunButtonClick())}
+                >
+                    <span className='mobile-bottom-dock__run-icon'>{isRunning ? '■' : '▶'}</span>
+                    <span className='mobile-bottom-dock__run-label'>{isRunning ? 'Stop' : 'Run'}</span>
+                </button>
+                <div
+                    className={classNames('mobile-bottom-dock__speed-box', {
+                        'mobile-bottom-dock__speed-box--normal': !isFast,
+                    })}
+                    onClick={toggleSpeed}
+                    role='button'
+                    tabIndex={0}
+                >
+                    <div className='mobile-bottom-dock__speed-labels'>
+                        <span className='mobile-bottom-dock__speed-title'>Execution</span>
+                        <span className='mobile-bottom-dock__speed-val'>{isFast ? 'FAST' : 'NORMAL'}</span>
+                    </div>
+                    <div className='mobile-bottom-dock__speed-switch'>
+                        <div className='mobile-bottom-dock__speed-knob' />
+                    </div>
+                </div>
             </div>
         </div>
     );
-};
+});
 
 const StatisticsInfoModal = ({
     is_mobile,
@@ -310,7 +378,7 @@ const RunPanel = observer(() => {
         />
     );
 
-    const show_run_panel = [BOT_BUILDER, CHART].includes(active_tab) || active_tour;
+    const show_run_panel = [BOT_BUILDER].includes(active_tab) || active_tour;
     if ((!show_run_panel && isDesktop) || active_tour === 'bot_builder') return null;
 
     return (
@@ -332,8 +400,8 @@ const RunPanel = observer(() => {
                 >
                     {content}
                 </Drawer>
-                {!isDesktop && <MobileDrawerFooter />}
             </div>
+            {!isDesktop && <MobileBottomDock />}
 
             <StatisticsInfoModal
                 is_mobile={!isDesktop}
