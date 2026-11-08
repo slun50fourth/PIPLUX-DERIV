@@ -5,7 +5,7 @@ import ErrorComponent from './index';
 class ErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { hasError: false };
+        this.state = { hasError: false, error: null, info: null };
     }
 
     componentDidCatch = (error, info) => {
@@ -18,7 +18,21 @@ class ErrorBoundary extends React.Component {
             info,
         });
     };
-    render = () => (this.state.hasError ? <ErrorComponent should_show_refresh={true} /> : this.props.children);
+
+    resetError = () => {
+        this.setState({ hasError: false, error: null, info: null });
+    };
+
+    render = () =>
+        this.state.hasError ? (
+            <ErrorComponent
+                should_show_refresh={true}
+                redirectOnClick={this.resetError}
+                redirect_label='Retry'
+            />
+        ) : (
+            this.props.children
+        );
 }
 
 ErrorBoundary.propTypes = {

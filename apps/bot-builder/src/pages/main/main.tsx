@@ -77,7 +77,7 @@ const AppWrapper = observer(() => {
     const { clear } = summary_card;
     const { DASHBOARD, BOT_BUILDER } = DBOT_TABS;
     const init_render = React.useRef(true);
-    const hash = ['dashboard', 'bot_builder', 'chart', 'tutorial'];
+    const hash = ['dashboard', 'bot_builder'];
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
@@ -140,38 +140,38 @@ const AppWrapper = observer(() => {
 
     React.useEffect(() => {
         const el_dashboard = document.getElementById('id-dbot-dashboard');
-        const el_tutorial = document.getElementById('id-tutorials');
+        const el_bot_builder = document.getElementById('id-bot-builder');
 
-        const observer_dashboard = new window.IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setLeftTabShadow(false);
-                    return;
-                }
-                setLeftTabShadow(true);
-            },
-            {
-                root: null,
-                threshold: 0.5, // set offset 0.1 means trigger if atleast 10% of element in viewport
-            }
-        );
+        let observer_dashboard: IntersectionObserver | null = null;
+        let observer_bot_builder: IntersectionObserver | null = null;
 
-        const observer_tutorial = new window.IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setRightTabShadow(false);
-                    return;
-                }
-                setRightTabShadow(true);
-            },
-            {
-                root: null,
-                threshold: 0.5, // set offset 0.1 means trigger if atleast 10% of element in viewport
+        if (typeof window !== 'undefined' && window.IntersectionObserver) {
+            if (el_dashboard) {
+                observer_dashboard = new window.IntersectionObserver(
+                    ([entry]) => {
+                        setLeftTabShadow(!entry.isIntersecting);
+                    },
+                    { root: null, threshold: 0.5 }
+                );
+                observer_dashboard.observe(el_dashboard);
             }
-        );
-        observer_dashboard.observe(el_dashboard);
-        observer_tutorial.observe(el_tutorial);
-    });
+
+            if (el_bot_builder) {
+                observer_bot_builder = new window.IntersectionObserver(
+                    ([entry]) => {
+                        setRightTabShadow(!entry.isIntersecting);
+                    },
+                    { root: null, threshold: 0.5 }
+                );
+                observer_bot_builder.observe(el_bot_builder);
+            }
+        }
+
+        return () => {
+            observer_dashboard?.disconnect();
+            observer_bot_builder?.disconnect();
+        };
+    }, []);
 
     React.useEffect(() => {
         if (connectionStatus !== CONNECTION_STATUS.OPENED) {
