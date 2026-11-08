@@ -1,16 +1,16 @@
 /**
- * BotBuilder — Method A Micro-Frontend Bridge
+ * BotBuilder — hosts the PIPLUX Bot Builder (apps/bot-builder, built from
+ * deriv-com/trading-bot-template) in a same-origin <iframe> served from /deriv-bot/.
  *
- * Hosts the Blockly-based bot builder in a sandboxed <iframe> and bridges:
- *   - OAuth tokens (auth handshake)
- *   - Account switches (Demo ↔ Real)
- *   - "Load and Run" XML payloads from the AI Scanner
+ * Auth: no token passing. The iframe is same-origin, so it reads the OAuth session
+ * (sessionStorage `auth_info`, localStorage `active_loginid`) this site already wrote.
  *
- * The postMessage protocol mirrors what dbtraders.com uses:
- *   Child → Parent : "newdtrader:ready"
- *   Parent → Child : { type: "newdtrader:auth", version: "v2", auth: {...}, ... }
- *   Parent → Child : { type: "dbot:load-xml", xml: "..." }     (PIPLUX extension)
- *   Parent → Child : { type: "dbot:run-bot" }                  (PIPLUX extension)
+ * postMessage protocol (see apps/bot-builder/src/app/piplux-bridge.ts):
+ *   Child → Parent : { type: 'newdtrader:ready' }
+ *                    { type: 'dbot:xml-loaded', ok, error? }
+ *                    { type: 'piplux:need-login' } | { type: 'piplux:auth-invalid' }
+ *   Parent → Child : { type: 'dbot:load-xml', xml, strategyName?, autoRun? }
+ *                    { type: 'dbot:run-bot' } | { type: 'dbot:stop-bot' }
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -19,80 +19,12 @@ import { observer } from 'mobx-react-lite';
 import { routes } from '@deriv/shared';
 import { useStore } from '@deriv/stores';
 import { botBuilderBus } from 'Services/bot-builder-bus';
-import { getStoredToken } from 'Services/oauth';
+import { generateOAuthURL } from 'Services/oauth';
 import './bot-builder.scss';
 
-// ---------------------------------------------------------------------------
-// Config — swap this to your deployed bot builder URL once it's live.
-// While testing locally you can set: REACT_APP_BOT_BUILDER_URL=http://localhost:3000/bot
-// ---------------------------------------------------------------------------
-const BOT_BUILDER_URL: string =
-    (window as any).__PIPLUX_BOT_BUILDER_URL__ ||
-    process.env.REACT_APP_BOT_BUILDER_URL ||
-    '/deriv-bot/bot.html?v=6';
-
-// The origin we'll trust for postMessages from the child iframe
-const botOrigin = (() => {
-    try {
-        if (BOT_BUILDER_URL.startsWith('/')) {
-            return window.location.origin;
-        }
-        return new URL(BOT_BUILDER_URL).origin;
-    } catch {
-        return '*';
-    }
-})();
-
-// ---------------------------------------------------------------------------
-// Helper: build the auth payload for the child (matches dbtraders protocol)
-// ---------------------------------------------------------------------------
-function buildAuthPayload(client: any) {
-    const accounts: Record<string, { token: string; currency: string; is_virtual: boolean }> = {};
-    const accountList: Array<any> = client.account_list || [];
-    const storedToken =
-        getStoredToken() ||
-        client.getToken?.() ||
-        client.token ||
-        localStorage.getItem('authToken') ||
-        '';
-    const activeLoginId =
-        client.loginid ||
-        sessionStorage.getItem('active_loginid') ||
-        localStorage.getItem('active_loginid') ||
-        '';
-
-    accountList.forEach((acc: any) => {
-        const id = acc.loginid || acc.account_id;
-        const tok = acc.token || storedToken;
-        if (id && tok) {
-            accounts[id] = {
-                token: tok,
-                currency: acc.currency || 'USD',
-                is_virtual: acc.is_virtual ?? id.startsWith('VR'),
-            };
-        }
-    });
-
-    if (activeLoginId && storedToken && !accounts[activeLoginId]) {
-        accounts[activeLoginId] = {
-            token: storedToken,
-            currency: client.currency || 'USD',
-            is_virtual: activeLoginId.startsWith('VR'),
-        };
-    }
-
-    return {
-        type: 'newdtrader:auth',
-        version: 'v2',
-        auth: {
-            access_token: storedToken,
-            expires_at: Date.now() + 60 * 60 * 1000, // 1h fallback
-        },
-        activeAccountId: activeLoginId,
-        accounts,
-        otpUrl: null,
-    };
-}
+// Trailing slash matters: the app's router basename is "/deriv-bot" and only has an index route.
+// Bump the query string to bust caches after rebuilding apps/bot-builder.
+const BOT_BUILDER_URL = '/deriv-bot/?v=1';
 
 // ---------------------------------------------------------------------------
 // BotBuilderBridge component — the actual iframe mount
@@ -103,113 +35,101 @@ interface BotBuilderBridgeProps {
     onXmlLoaded?: () => void;
 }
 
-const BotBuilderBridge: React.FC<BotBuilderBridgeProps> = observer(
-    ({ pendingXml, pendingRun, onXmlLoaded }) => {
-        const { client } = useStore();
-        const iframeRef = useRef<HTMLIFrameElement>(null);
-        const [isReady, setIsReady] = useState(false);
-        const [isLoading, setIsLoading] = useState(true);
+const BotBuilderBridge: React.FC<BotBuilderBridgeProps> = observer(({ pendingXml, pendingRun, onXmlLoaded }) => {
+    const { client } = useStore();
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+    const [isReady, setIsReady] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const lastLoginid = useRef(client.loginid);
 
-        // Send a message to the child iframe safely
-        const sendToChild = useCallback(
-            (payload: object) => {
-                const iframe = iframeRef.current;
-                if (!iframe?.contentWindow) return;
-                try {
-                    iframe.contentWindow.postMessage(payload, botOrigin === '*' ? '*' : botOrigin);
-                } catch (e) {
-                    console.warn('[BotBuilder] postMessage failed:', e);
-                }
-            },
-            []
-        );
+    const sendToChild = useCallback((payload: object) => {
+        const win = iframeRef.current?.contentWindow;
+        if (!win) return;
+        try {
+            win.postMessage(payload, window.location.origin);
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('[BotBuilder] postMessage failed:', e);
+        }
+    }, []);
 
-        // Send auth on ready
-        const sendAuth = useCallback(() => {
-            const payload = buildAuthPayload(client);
-            sendToChild(payload);
-        }, [client, sendToChild]);
+    const goToLogin = useCallback(async () => {
+        const url = await generateOAuthURL();
+        if (url) window.location.replace(url);
+    }, []);
 
-        // Listen for messages from the child iframe
-        useEffect(() => {
-            const handleMessage = (event: MessageEvent) => {
-                // Security: only trust our bot builder origin (or any if not set)
-                if (botOrigin !== '*' && event.origin !== botOrigin) return;
+    // Messages from the iframe (same-origin, and only from our own iframe)
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.origin !== window.location.origin) return;
+            if (event.source !== iframeRef.current?.contentWindow) return;
+            const data = event.data;
+            if (!data || typeof data !== 'object') return;
 
-                const data = event.data;
-                if (!data || typeof data !== 'object') return;
-
-                if (data === 'newdtrader:ready' || data.type === 'newdtrader:ready' || data === 'deriv:dtrader:ready') {
+            switch (data.type) {
+                case 'newdtrader:ready':
                     setIsReady(true);
                     setIsLoading(false);
-                    sendAuth();
-                }
-
-                if (data.type === 'deriv:dtrader:reconnect-failed') {
-                    // Child lost auth — reload iframe
-                    if (iframeRef.current) {
-                        iframeRef.current.src = BOT_BUILDER_URL;
-                    }
-                }
-
-                if (data.type === 'deriv:dtrader:need-relogin') {
-                    // Auth expired — full reload
-                    window.location.reload();
-                }
-            };
-
-            window.addEventListener('message', handleMessage);
-            return () => window.removeEventListener('message', handleMessage);
-        }, [sendAuth]);
-
-        // Re-send auth on account switch
-        useEffect(() => {
-            if (isReady) {
-                sendAuth();
-                sendToChild({ type: 'deriv:account-switch', loginid: client.loginid });
+                    break;
+                case 'dbot:xml-loaded':
+                    setLoadError(data.ok ? null : data.error || 'Could not load this strategy into the Bot Builder.');
+                    break;
+                case 'piplux:need-login':
+                case 'piplux:auth-invalid':
+                    goToLogin();
+                    break;
+                default:
             }
-        }, [client.loginid, isReady, sendAuth, sendToChild]);
+        };
 
-        // Deliver pending XML/run commands from AI Scanner
-        useEffect(() => {
-            if (!isReady || !pendingXml) return;
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [goToLogin]);
 
-            sendToChild({ type: 'dbot:load-xml', xml: pendingXml });
+    // The iframe reads the active account from shared storage on boot, so reload it after an account switch.
+    useEffect(() => {
+        if (lastLoginid.current === client.loginid) return;
+        lastLoginid.current = client.loginid;
+        if (isReady && iframeRef.current) {
+            setIsReady(false);
+            setIsLoading(true);
+            iframeRef.current.src = BOT_BUILDER_URL;
+        }
+    }, [client.loginid, isReady]);
 
-            if (pendingRun) {
-                // Small delay to let the workspace parse and render the XML first
-                const t = setTimeout(() => sendToChild({ type: 'dbot:run-bot' }), 800);
-                return () => clearTimeout(t);
-            }
+    // Deliver pending XML (AI Scanner / free bots / upload). The child waits for its own workspace.
+    useEffect(() => {
+        if (!isReady || !pendingXml) return;
+        sendToChild({ type: 'dbot:load-xml', xml: pendingXml, autoRun: !!pendingRun });
+        onXmlLoaded?.();
+    }, [isReady, pendingXml, pendingRun, sendToChild, onXmlLoaded]);
 
-            onXmlLoaded?.();
-        }, [isReady, pendingXml, pendingRun, sendToChild, onXmlLoaded]);
-
-        return (
-            <div className='bot-builder-bridge'>
-                {isLoading && (
-                    <div className='bot-builder-bridge__loading'>
-                        <div className='bot-builder-bridge__spinner' />
-                        <span>Loading Bot Builder…</span>
-                    </div>
-                )}
-                <iframe
-                    ref={iframeRef}
-                    src={BOT_BUILDER_URL}
-                    className='bot-builder-bridge__iframe'
-                    title='PIPLUX Bot Builder'
-                    sandbox='allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads'
-                    allow='clipboard-read; clipboard-write'
-                    onLoad={() => {
-                        setIsLoading(false);
-                        setIsReady(true);
-                        sendAuth();
-                    }}
-                />
-            </div>
-        );
-    }
-);
+    return (
+        <div className='bot-builder-bridge'>
+            {isLoading && (
+                <div className='bot-builder-bridge__loading'>
+                    <div className='bot-builder-bridge__spinner' />
+                    <span>Loading Bot Builder…</span>
+                </div>
+            )}
+            {loadError && (
+                <div className='bot-builder-bridge__loading' role='alert'>
+                    <span>{loadError}</span>
+                </div>
+            )}
+            <iframe
+                ref={iframeRef}
+                src={BOT_BUILDER_URL}
+                className='bot-builder-bridge__iframe'
+                title='PIPLUX Bot Builder'
+                sandbox='allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads'
+                allow='clipboard-read; clipboard-write'
+                onLoad={() => setIsLoading(false)}
+            />
+        </div>
+    );
+});
 
 // ---------------------------------------------------------------------------
 // Main BotBuilder page — tabs: Builder | Free Bots | Upload

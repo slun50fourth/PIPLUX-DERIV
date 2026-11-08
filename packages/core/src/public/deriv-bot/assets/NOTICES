@@ -5505,10 +5505,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --------------------------------------------------------------------------------
 deriv_chart
-
-TODO: Add your license here.
-
---------------------------------------------------------------------------------
 deriv_technical_analysis
 
 MIT License
@@ -5672,7 +5668,7 @@ equatable
 
 MIT License
 
-Copyright (c) 2026 Felix Angelov
+Copyright (c) 2024 Felix Angelov
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

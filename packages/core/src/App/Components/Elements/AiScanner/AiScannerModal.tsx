@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { routes } from '@deriv/shared';
 import { botBuilderBus } from 'Services/bot-builder-bus';
@@ -284,7 +284,9 @@ export const AiScannerModal: React.FC = () => {
     try {
       const fullXml = await getEntryScannerXml(bestResult);
       injectXmlIntoBlockly(fullXml);
-      botBuilderBus.loadXml(fullXml, { autoRun: true });
+      // Load only (no autoRun): the direct WebSocket engine below is the one that trades here.
+      // autoRun:true would start the Blockly bot as well => two engines trading the same signal.
+      botBuilderBus.loadXml(fullXml, { autoRun: false });
     } catch {
       // Blockly not present or not on DBot page â€” fallback to direct execution
     }

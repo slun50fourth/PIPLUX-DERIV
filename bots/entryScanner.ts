@@ -614,7 +614,6 @@ export class EntryScannerSession {
                 currency: this.currency,
                 duration: 1,
                 duration_unit: 't',
-                symbol: this.result.symbol,
                 underlying_symbol: this.result.symbol,
                 barrier: String(currentBarrier),
               };

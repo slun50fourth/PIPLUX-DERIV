@@ -358,7 +358,6 @@ export class ProAiSession {
         currency,
         duration: 1,
         duration_unit: 't',
-        symbol,
         underlying_symbol: symbol,
       };
       if (spec.barrier !== undefined) params.barrier = String(spec.barrier);
