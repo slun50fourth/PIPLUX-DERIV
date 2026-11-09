@@ -17,6 +17,31 @@ export default Engine =>
 
                     this.setContractFlags(contract);
 
+                    // Normalize contract fields across legacy and v4 Options WebSocket payloads
+                    const fallback_buy_id =
+                        contract.transaction_ids?.buy ??
+                        this.buyTransactionId ??
+                        contract.contract_id ??
+                        contract.id;
+                    const fallback_sell_id =
+                        contract.transaction_ids?.sell ??
+                        (this.isSold ? contract.contract_id ?? contract.id ?? fallback_buy_id : undefined);
+                    contract.transaction_ids = {
+                        ...(contract.transaction_ids || {}),
+                        buy: fallback_buy_id,
+                        ...(fallback_sell_id !== undefined ? { sell: fallback_sell_id } : {}),
+                    };
+                    contract.underlying_symbol =
+                        contract.underlying_symbol || contract.underlying || this.tradeOptions?.symbol || '';
+                    contract.underlying = contract.underlying || contract.underlying_symbol;
+                    contract.date_start = contract.date_start ?? contract.purchase_time;
+                    contract.entry_spot = contract.entry_spot ?? contract.entry_tick;
+                    contract.entry_tick = contract.entry_tick ?? contract.entry_spot;
+                    contract.entry_tick_time = contract.entry_tick_time ?? contract.entry_spot_time;
+                    contract.exit_spot = contract.exit_spot ?? contract.exit_tick;
+                    contract.exit_tick = contract.exit_tick ?? contract.exit_spot;
+                    contract.exit_tick_time = contract.exit_tick_time ?? contract.exit_spot_time;
+
                     this.data.contract = contract;
 
                     broadcastContract({ accountID: api_base.account_info.loginid, ...contract });
@@ -27,7 +52,7 @@ export default Engine =>
                         this.updateTotals(contract);
                         contractStatus({
                             id: 'contract.sold',
-                            data: contract.transaction_ids.sell,
+                            data: contract.transaction_ids?.sell ?? contract.contract_id,
                             contract,
                         });
 

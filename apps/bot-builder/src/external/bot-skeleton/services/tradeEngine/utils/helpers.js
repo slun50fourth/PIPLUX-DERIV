@@ -299,21 +299,23 @@ export const doUntilDone = (promiseFn, errors_to_ignore, api_base) => {
 };
 
 export const createDetails = contract => {
-    const { sell_price: sellPrice, buy_price: buyPrice, currency } = contract;
-    const profit = getRoundedNumber(sellPrice - buyPrice, currency);
+    const { sell_price: sellPrice, buy_price: buyPrice, currency } = contract || {};
+    const profit = getRoundedNumber((sellPrice || 0) - (buyPrice || 0), currency);
     const result = profit < 0 ? 'loss' : 'win';
+    const entry_time = contract?.entry_tick_time ?? contract?.entry_spot_time ?? contract?.date_start ?? 0;
+    const exit_time = contract?.exit_tick_time ?? contract?.exit_spot_time ?? 0;
 
     return [
-        contract.transaction_ids.buy,
-        +contract.buy_price,
-        +contract.sell_price,
+        contract?.transaction_ids?.buy ?? contract?.contract_id ?? '',
+        +(contract?.buy_price ?? 0),
+        +(contract?.sell_price ?? 0),
         profit,
-        contract.contract_type,
-        formatTime(parseInt(`${contract.entry_tick_time}000`), 'HH:mm:ss'),
-        +contract.entry_tick,
-        formatTime(parseInt(`${contract.exit_tick_time}000`), 'HH:mm:ss'),
-        +contract.exit_tick,
-        +(contract.barrier ? contract.barrier : 0),
+        contract?.contract_type ?? '',
+        entry_time ? formatTime(parseInt(`${entry_time}000`), 'HH:mm:ss') : '',
+        +(contract?.entry_tick ?? contract?.entry_spot ?? 0),
+        exit_time ? formatTime(parseInt(`${exit_time}000`), 'HH:mm:ss') : '',
+        +(contract?.exit_tick ?? contract?.exit_spot ?? 0),
+        +(contract?.barrier ? contract.barrier : 0),
         result,
     ];
 };

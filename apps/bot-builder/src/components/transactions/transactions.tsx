@@ -146,12 +146,17 @@ const Transactions = observer(({ is_drawer_open }: TTransactions) => {
                                 />
                             )}
                             keyMapper={row => {
-                                switch (row.type) {
+                                switch (row?.type) {
                                     case transaction_elements.CONTRACT: {
-                                        return row.data.transaction_ids.buy;
+                                        return (
+                                            row?.data?.transaction_ids?.buy ??
+                                            row?.data?.contract_id ??
+                                            row?.data?.id ??
+                                            `trx_${Math.random()}`
+                                        );
                                     }
                                     case transaction_elements.DIVIDER: {
-                                        return row.data;
+                                        return row?.data ?? `div_${Math.random()}`;
                                     }
                                     default: {
                                         return null;
@@ -160,7 +165,7 @@ const Transactions = observer(({ is_drawer_open }: TTransactions) => {
                             }}
                             getRowSize={({ index }) => {
                                 const row = transaction_list?.[index];
-                                switch (row.type) {
+                                switch (row?.type) {
                                     case transaction_elements.CONTRACT: {
                                         return 50;
                                     }

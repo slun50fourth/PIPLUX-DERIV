@@ -109,7 +109,7 @@ export default function MobileTransactionCards({ transaction }: { transaction: T
                     title='Entry Spot'
                     label={transaction?.entry_spot}
                     right_aligned
-                    loader={!transaction.entry_spot}
+                    loader={!transaction?.entry_spot}
                 />
             </div>
             <div className={`${PARENT_CLASS}__card__row`}>
@@ -118,7 +118,7 @@ export default function MobileTransactionCards({ transaction }: { transaction: T
                     title='Exit Spot'
                     label={transaction?.exit_spot}
                     right_aligned
-                    loader={!transaction.exit_spot}
+                    loader={!transaction?.exit_spot}
                 />
             </div>
 
@@ -136,7 +136,7 @@ export default function MobileTransactionCards({ transaction }: { transaction: T
                         </div>
                     }
                     right_aligned
-                    loader={!transaction.is_completed}
+                    loader={!transaction?.is_completed}
                 />
             </div>
         </div>

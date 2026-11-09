@@ -181,12 +181,40 @@ window.Blockly.Block.isDynamic = function (block_type) {
     return /^((procedures_)|(variables_)|(math_change$))/.test(block_type);
 };
 
+// Polyfill Blockly.Field.prototype.setText removed in Blockly v10
+if (window.Blockly?.Field && typeof window.Blockly.Field.prototype.setText !== 'function') {
+    window.Blockly.Field.prototype.setText = function (newText) {
+        if (newText === null || newText === undefined) return;
+        const strText = String(newText);
+        if (this instanceof window.Blockly.FieldLabel || this.SERIALIZABLE === false) {
+            this.value_ = strText;
+        }
+        this.text_ = strText;
+        if (typeof this.forceRerender === 'function') {
+            this.forceRerender();
+        }
+    };
+}
+
 // TODO: Do not remove this
 // overwriting the doClassValidation_ method to handle
-// dropdown values
+// dropdown values before async API options finish loading
 window.Blockly.FieldDropdown.prototype.doClassValidation_ = function (newValue) {
-    this.text_ = null;
-    const text = this?.selectedOption?.[0];
-    this.setText(text ?? '');
+    if (newValue === null || newValue === undefined) return newValue;
+    const strVal = String(newValue);
+    if (Array.isArray(this.menuGenerator_)) {
+        const existing = this.menuGenerator_.find(opt => Array.isArray(opt) && opt[1] === strVal);
+        if (existing) {
+            this.selectedOption = existing;
+        } else if (strVal !== '') {
+            const fallbackOption = [strVal, strVal];
+            this.menuGenerator_.push(fallbackOption);
+            this.selectedOption = fallbackOption;
+        }
+    }
+    this.text_ = this.selectedOption?.[0] ?? strVal;
+    if (typeof this.forceRerender === 'function' && this.sourceBlock_?.rendered) {
+        this.forceRerender();
+    }
     return newValue;
 };

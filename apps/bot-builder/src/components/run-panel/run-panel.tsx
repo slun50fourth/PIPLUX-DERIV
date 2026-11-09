@@ -128,9 +128,38 @@ const DrawerHeader = ({ is_clear_stat_disabled, is_mobile, is_drawer_open, onCle
         />
     );
 
+class PanelErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+    constructor(props: { children: React.ReactNode }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+    componentDidCatch(error: unknown) {
+        // eslint-disable-next-line no-console
+        console.warn('[RunPanel] Caught panel render error:', error);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-general)' }}>
+                    <button
+                        type='button'
+                        className='dc-btn dc-btn--secondary'
+                        onClick={() => this.setState({ hasError: false })}
+                    >
+                        Reload Panel
+                    </button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
 const DrawerContent = ({ active_index, is_drawer_open, active_tour, setActiveTabIndex, ...props }: TDrawerContent) => {
     const { isDesktop } = useDevice();
-    const isMobileView = !isDesktop || (typeof window !== 'undefined' && window.innerWidth <= 768);
     // Use the useBlockScroll hook to prevent body scrolling when drawer is open on mobile
 
     React.useEffect(() => {
@@ -148,17 +177,27 @@ const DrawerContent = ({ active_index, is_drawer_open, active_tour, setActiveTab
     return (
         <>
             <Tabs active_index={active_index} onTabItemClick={setActiveTabIndex} top>
-                <div id='db-run-panel-tab__summary' label={<Localize i18n_default_text='Summary & Trades' />}>
-                    <Summary is_drawer_open={is_drawer_open} />
+                <div id='db-run-panel-tab__summary' label={<Localize i18n_default_text='Summary' />}>
+                    <PanelErrorBoundary>
+                        <Summary is_drawer_open={is_drawer_open} />
+                    </PanelErrorBoundary>
                 </div>
                 <div id='db-run-panel-tab__transactions' label={<Localize i18n_default_text='Transactions' />}>
-                    <Transactions is_drawer_open={is_drawer_open} />
+                    <PanelErrorBoundary>
+                        <Transactions is_drawer_open={is_drawer_open} />
+                    </PanelErrorBoundary>
                 </div>
                 <div id='db-run-panel-tab__journal' label={<Localize i18n_default_text='Journal' />}>
-                    <Journal />
+                    <PanelErrorBoundary>
+                        <Journal />
+                    </PanelErrorBoundary>
                 </div>
             </Tabs>
-            {((is_drawer_open && active_index !== 2) || active_tour) && <StatisticsSummary {...props} />}
+            {((is_drawer_open && active_index !== 2) || active_tour) && (
+                <PanelErrorBoundary>
+                    <StatisticsSummary {...props} />
+                </PanelErrorBoundary>
+            )}
         </>
     );
 };

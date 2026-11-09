@@ -232,6 +232,31 @@ export const load = async ({
     // Normalize legacy math_number_positive to math_number
     xml.querySelectorAll('[type="math_number_positive"]').forEach(el => el.setAttribute('type', 'math_number'));
 
+    // Sanitize duplicate block/shadow IDs, unsupported <mutation> tags, and collapsed attributes that can break Blockly v10 domToWorkspace
+    const seen_block_ids = new Set();
+    xml.querySelectorAll('block, shadow').forEach(el => {
+        const id = el.getAttribute('id');
+        if (id) {
+            if (seen_block_ids.has(id)) {
+                el.setAttribute('id', window.Blockly.utils.idGenerator.genUid());
+            } else {
+                seen_block_ids.add(id);
+            }
+        }
+        if (el.getAttribute('collapsed') === 'true') {
+            el.removeAttribute('collapsed');
+        }
+        const block_type = el.getAttribute('type');
+        const block_def = block_type ? window.Blockly.Blocks[block_type] : null;
+        if (block_def && typeof block_def.domToMutation !== 'function') {
+            Array.from(el.children).forEach(child => {
+                if (child.tagName && child.tagName.toLowerCase() === 'mutation') {
+                    el.removeChild(child);
+                }
+            });
+        }
+    });
+
     const blockly_xml = xml.querySelectorAll('block');
 
     // Check if there are any blocks in this strategy.
@@ -840,27 +865,31 @@ export const appendCollapsedMainBlocksFields = block_instance => {
 };
 
 export const appendCollapsedProcedureBlocksFields = instance => {
-    const collapsed_input = instance.getInput('_TEMP_COLLAPSED_INPUT');
-    if (collapsed_input && instance.collapsed_ && !collapsed_input.icon_added) {
-        collapsed_input.icon_added = true;
-        const dropdown_path = `${instance.workspace.options.pathToMedia}dropdown-arrow.svg`;
-        const field_expand_icon = new Blockly.FieldImage(dropdown_path, 16, 16, localize('Collapsed'), () =>
-            instance.setCollapsed(false)
-        );
-        const function_name = instance.getFieldValue('NAME');
-        const args = ` (${instance?.arguments?.join(', ')})`;
+    try {
+        const collapsed_input = instance?.getInput?.('_TEMP_COLLAPSED_INPUT');
+        if (collapsed_input && instance.collapsed_ && !collapsed_input.icon_added) {
+            collapsed_input.icon_added = true;
+            const dropdown_path = `${instance.workspace.options.pathToMedia}dropdown-arrow.svg`;
+            const field_expand_icon = new Blockly.FieldImage(dropdown_path, 16, 16, localize('Collapsed'), () =>
+                instance.setCollapsed(false)
+            );
+            const function_name = instance.getFieldValue('NAME') || '';
+            const args = ` (${instance?.arguments?.join(', ') || ''})`;
 
-        collapsed_input
-            .appendField(new Blockly.FieldLabel(localize('function'), ''))
-            .appendField(new Blockly.FieldLabel(function_name + args, 'header__title'))
-            .appendField(field_expand_icon);
+            collapsed_input
+                .appendField(new Blockly.FieldLabel(localize('function'), ''))
+                .appendField(new Blockly.FieldLabel(function_name + args, 'header__title'))
+                .appendField(field_expand_icon);
 
-        const remove_last_input = dummy_input => {
-            const tmp_array = dummy_input.fieldRow;
-            tmp_array[0]?.setVisible(false);
-            tmp_array[0]?.forceRerender();
-        };
-        remove_last_input(collapsed_input);
+            const remove_last_input = dummy_input => {
+                const tmp_array = dummy_input.fieldRow;
+                tmp_array[0]?.setVisible(false);
+                tmp_array[0]?.forceRerender();
+            };
+            remove_last_input(collapsed_input);
+        }
+    } catch (e) {
+        // ignore collapsed procedure block field errors during headless load
     }
 };
 

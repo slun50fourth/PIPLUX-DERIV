@@ -113,7 +113,7 @@ export default function DesktopTransactionTable({
                                     }
                                 />
                                 <TableCell label={data?.entry_spot} loader={!data?.entry_spot} />
-                                <TableCell label={data?.exit_spot} loader={!data.exit_spot} />
+                                <TableCell label={data?.exit_spot} loader={!data?.exit_spot} />
                                 <TableCell label={Math.abs(data?.buy_price ?? 0).toFixed(2)} />
                                 <TableCell
                                     label={
@@ -126,7 +126,7 @@ export default function DesktopTransactionTable({
                                             {Math.abs(data?.profit ?? 0).toFixed(2)}
                                         </div>
                                     }
-                                    loader={!data.is_completed}
+                                    loader={!data?.is_completed}
                                 />
                             </div>
                         );

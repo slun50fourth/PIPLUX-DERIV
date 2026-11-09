@@ -88,7 +88,11 @@ export default class DataCollectionStore {
             return;
         }
 
-        const { buy: transaction_id } = contract.data.transaction_ids;
+        const transaction_id =
+            contract?.data?.transaction_ids?.buy ?? (contract?.data as any)?.contract_id;
+        if (!transaction_id) {
+            return;
+        }
         const is_known_transaction = Object.keys(this.transaction_ids).includes(transaction_id.toString());
 
         if (!is_known_transaction) {

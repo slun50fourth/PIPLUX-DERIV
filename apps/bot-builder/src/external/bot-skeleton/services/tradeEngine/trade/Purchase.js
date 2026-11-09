@@ -19,10 +19,12 @@ export default Engine =>
             const onSuccess = response => {
                 // Don't unnecessarily send a forget request for a purchased contract.
                 const { buy } = response;
+                const buy_txn_id = buy?.transaction_id ?? buy?.contract_id;
+                this.buyTransactionId = buy_txn_id;
 
                 contractStatus({
                     id: 'contract.purchase_received',
-                    data: buy.transaction_id,
+                    data: buy_txn_id,
                     buy,
                 });
 
@@ -34,11 +36,11 @@ export default Engine =>
                 }
 
                 delayIndex = 0;
-                log(LogTypes.PURCHASE, { transaction_id: buy.transaction_id });
+                log(LogTypes.PURCHASE, { transaction_id: buy_txn_id });
                 info({
                     accountID: this.accountInfo.loginid,
                     totalRuns: this.updateAndReturnTotalRuns(),
-                    transaction_ids: { buy: buy.transaction_id },
+                    transaction_ids: { buy: buy_txn_id },
                     contract_type,
                     buy_price: buy.buy_price,
                 });

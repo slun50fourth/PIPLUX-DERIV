@@ -56,7 +56,28 @@ export default class TransactionsStore {
     is_transaction_details_modal_open = false;
 
     get transactions(): TTransaction[] {
-        if (this.core?.client?.loginid) return this.elements[this.core?.client?.loginid] ?? [];
+        if (this.core?.client?.loginid) {
+            const list = this.elements[this.core?.client?.loginid] ?? [];
+            return list.map((item, idx) => {
+                if (item?.type === transaction_elements.CONTRACT && item.data && typeof item.data === 'object') {
+                    const d = item.data as any;
+                    if (!d.transaction_ids || !d.transaction_ids.buy) {
+                        const fallbackId = d.transaction_ids?.buy ?? d.contract_id ?? d.id ?? `trx_${idx}`;
+                        return {
+                            ...item,
+                            data: {
+                                ...d,
+                                transaction_ids: {
+                                    ...(d.transaction_ids || {}),
+                                    buy: fallbackId,
+                                },
+                            },
+                        };
+                    }
+                }
+                return item;
+            });
+        }
         return [];
     }
 
@@ -112,19 +133,37 @@ export default class TransactionsStore {
     pushTransaction(data: TContractInfo) {
         const is_completed = isEnded(data as ProposalOpenContract);
         const { run_id } = this.root_store.run_panel;
-        const current_account = this.core?.client?.loginid as string;
+        const current_account = (this.core?.client?.loginid as string) || 'default';
+        const raw = data as any;
+        const fallback_buy_id =
+            raw?.transaction_ids?.buy ?? raw?.contract_id ?? raw?.id ?? Date.now();
+        const fallback_sell_id =
+            raw?.transaction_ids?.sell ?? (is_completed ? raw?.contract_id ?? raw?.id : undefined);
+        const raw_date_start = raw?.date_start ?? raw?.purchase_time;
+        const raw_entry_spot = raw?.entry_spot ?? raw?.entry_tick;
+        const raw_entry_time = raw?.entry_tick_time ?? raw?.entry_spot_time;
+        const raw_exit_spot = raw?.exit_spot ?? raw?.exit_tick;
+        const raw_exit_time = raw?.exit_tick_time ?? raw?.exit_spot_time;
 
         const contract: TContractInfo = {
             ...data,
+            underlying_symbol: raw?.underlying_symbol || raw?.underlying || '',
+            transaction_ids: {
+                ...(raw?.transaction_ids || {}),
+                buy: fallback_buy_id,
+                ...(fallback_sell_id !== undefined ? { sell: fallback_sell_id } : {}),
+            },
             is_completed,
             run_id,
-            date_start: formatDate(data.date_start, 'YYYY-M-D HH:mm:ss [GMT]'),
-            entry_tick: data.entry_spot,
-            entry_tick_time: data.entry_tick_time && formatDate(data.entry_tick_time, 'YYYY-M-D HH:mm:ss [GMT]'),
-            exit_tick: (data as any).exit_spot || data.exit_tick,
-            exit_tick_time: data.exit_tick_time && formatDate(data.exit_tick_time, 'YYYY-M-D HH:mm:ss [GMT]'),
+            date_start: raw_date_start && formatDate(raw_date_start, 'YYYY-M-D HH:mm:ss [GMT]'),
+            entry_spot: raw_entry_spot,
+            entry_tick: raw_entry_spot,
+            entry_tick_time: raw_entry_time && formatDate(raw_entry_time, 'YYYY-M-D HH:mm:ss [GMT]'),
+            exit_spot: raw_exit_spot,
+            exit_tick: raw_exit_spot,
+            exit_tick_time: raw_exit_time && formatDate(raw_exit_time, 'YYYY-M-D HH:mm:ss [GMT]'),
             profit: is_completed ? data.profit : 0,
-        };
+        } as TContractInfo;
 
         if (!this.elements[current_account]) {
             this.elements = {
@@ -134,12 +173,17 @@ export default class TransactionsStore {
         }
 
         const same_contract_index = this.elements[current_account]?.findIndex(c => {
-            if (typeof c.data === 'string') return false;
-            return (
-                c.type === transaction_elements.CONTRACT &&
-                c.data?.transaction_ids &&
-                c.data.transaction_ids.buy === data.transaction_ids?.buy
-            );
+            if (typeof c.data === 'string' || !c.data) return false;
+            const cData = c.data as any;
+            const matchByBuy =
+                cData?.transaction_ids?.buy !== undefined &&
+                contract.transaction_ids?.buy !== undefined &&
+                cData.transaction_ids.buy === contract.transaction_ids.buy;
+            const matchByContractId =
+                cData?.contract_id !== undefined &&
+                raw?.contract_id !== undefined &&
+                cData.contract_id === raw.contract_id;
+            return c.type === transaction_elements.CONTRACT && (matchByBuy || matchByContractId);
         });
 
         if (same_contract_index === -1) {

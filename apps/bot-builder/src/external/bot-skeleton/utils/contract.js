@@ -12,10 +12,10 @@ export const getContractTypeName = contract => {
         contract_type_objs.forEach(contract_type_obj => {
             const contract_type_names = Object.entries(contract_type_obj)[0]; // ['CALL', 'Rise']
 
-            if (contract_type_names[0] === contract.contract_type) {
+            if (contract_type_names[0] === contract?.contract_type) {
                 // Extra check for CALL & PUT types to distinguish Rise/Fall & Higher/Lower.
                 if (['CALL', 'PUT'].includes(contract_type_names[0])) {
-                    const shortcode_suffix = contract.shortcode.split('_').slice(-2)[0];
+                    const shortcode_suffix = (contract?.shortcode || '').split('_').slice(-2)[0] || 'S0P';
                     const is_risefall = /^S0P$/.test(shortcode_suffix);
                     const req_opposite_name = is_risefall ? 'CALLPUT' : 'HIGHERLOWER';
 

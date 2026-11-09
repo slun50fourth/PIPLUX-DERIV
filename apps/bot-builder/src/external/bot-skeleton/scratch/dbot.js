@@ -83,9 +83,15 @@ class DBot {
                             const run_button = document.querySelector('#db-animation__run-button');
                             if (run_button) run_button.disabled = true;
 
-                            that.interpreter.unsubscribeFromTicksService().then(async () => {
-                                await that.interpreter?.bot.tradeEngine.watchTicks(symbol);
-                            });
+                            that.interpreter
+                                .unsubscribeFromTicksService()
+                                .then(async () => {
+                                    await that.interpreter?.bot.tradeEngine.watchTicks(symbol);
+                                })
+                                .catch(() => {})
+                                .finally(() => {
+                                    if (run_button) run_button.disabled = false;
+                                });
                         }
                     } else if (is_trade_type_cat_list_change && event.blockId === this.id) {
                         contracts_for
