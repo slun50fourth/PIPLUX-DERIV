@@ -54,11 +54,53 @@ export const saveWorkspaceToRecent = async (xml, save_type = save_types.UNSAVED)
 };
 
 export const getSavedWorkspaces = async () => {
+    let workspaces = [];
     try {
-        return JSON.parse(LZString.decompress(await localForage.getItem('saved_workspaces'))) || [];
+        workspaces = JSON.parse(LZString.decompress(await localForage.getItem('saved_workspaces'))) || [];
     } catch (e) {
-        return [];
+        workspaces = [];
     }
+
+    try {
+        if (typeof window !== 'undefined' && window.localStorage?.getItem('piplux_free_bots_seeded_v1') !== 'true') {
+            window.localStorage?.setItem('piplux_free_bots_seeded_v1', 'true');
+            const free_bots = [
+                { id: 'piplux-free-apex-range-ai', name: 'Apex Range AI (Free Bot)', url: '/bots/Apex_Range_AI.xml' },
+                { id: 'piplux-free-apex-ai', name: 'Apex AI (Free Bot)', url: '/bots/Apex_AI.xml' },
+                {
+                    id: 'piplux-free-entry-scanner',
+                    name: 'Entry Scanner Bot (Free Bot)',
+                    url: '/bots/entry_scanner_template.xml',
+                },
+            ];
+            let updated = false;
+            for (const bot of free_bots) {
+                if (!workspaces.some(w => w.id === bot.id || w.name === bot.name)) {
+                    const res = await fetch(bot.url);
+                    if (res.ok) {
+                        const xml = await res.text();
+                        if (xml && xml.includes('<xml')) {
+                            workspaces.push({
+                                id: bot.id,
+                                xml,
+                                name: bot.name,
+                                timestamp: Date.now(),
+                                save_type: save_types.LOCAL,
+                            });
+                            updated = true;
+                        }
+                    }
+                }
+            }
+            if (updated) {
+                await localForage.setItem('saved_workspaces', LZString.compress(JSON.stringify(workspaces)));
+            }
+        }
+    } catch (err) {
+        // ignore seeding errors
+    }
+
+    return workspaces;
 };
 
 export const removeExistingWorkspace = async workspace_id => {

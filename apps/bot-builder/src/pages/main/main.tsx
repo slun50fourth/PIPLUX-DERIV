@@ -408,7 +408,6 @@ const AppWrapper = observer(() => {
             </div>
             <DesktopWrapper>
                 <div className='main__run-strategy-wrapper'>
-                    <RunStrategy />
                     <RunPanel />
                 </div>
                 <ChartModal />

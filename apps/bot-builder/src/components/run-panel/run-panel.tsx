@@ -420,29 +420,31 @@ const RunPanel = observer(() => {
     );
 
     const show_run_panel = [BOT_BUILDER].includes(active_tab) || active_tour;
-    if ((!show_run_panel && !isMobileView) || active_tour === 'bot_builder') return null;
+    if (active_tour === 'bot_builder') return null;
 
     return (
         <>
-            <div className={isMobileView && is_drawer_open ? 'run-panel__container--mobile' : 'run-panel'}>
-                <Drawer
-                    anchor='right'
-                    className={classNames('run-panel', {
-                        'run-panel__container': !isMobileView,
-                        'run-panel__container--tour-active': !isMobileView && active_tour,
-                    })}
-                    contentClassName='run-panel__content'
-                    header={header}
-                    footer={!isMobileView && footer}
-                    is_open={is_drawer_open}
-                    toggleDrawer={toggleDrawer}
-                    width={366}
-                    zIndex={popover_zindex.RUN_PANEL}
-                >
-                    {content}
-                </Drawer>
-            </div>
-            {isMobileView && <MobileBottomDock />}
+            {(isMobileView || show_run_panel || is_drawer_open) && (
+                <div className={isMobileView && is_drawer_open ? 'run-panel__container--mobile' : 'run-panel'}>
+                    <Drawer
+                        anchor='right'
+                        className={classNames('run-panel', {
+                            'run-panel__container': !isMobileView,
+                            'run-panel__container--tour-active': !isMobileView && active_tour,
+                        })}
+                        contentClassName='run-panel__content'
+                        header={header}
+                        footer={!isMobileView && footer}
+                        is_open={is_drawer_open}
+                        toggleDrawer={toggleDrawer}
+                        width={366}
+                        zIndex={popover_zindex.RUN_PANEL}
+                    >
+                        {content}
+                    </Drawer>
+                </div>
+            )}
+            <MobileBottomDock />
 
             <StatisticsInfoModal
                 is_mobile={isMobileView}

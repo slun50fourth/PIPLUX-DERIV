@@ -1,18 +1,17 @@
 /** @define header; weak */
 .header {
-    position: absolute;
+    position: fixed;
     box-sizing: border-box;
-    height: $HEADER_HEIGHT;
+    height: $MOBILE_HEADER_HEIGHT;
     width: 100%;
     top: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
     transition: opacity 0.3s;
     backface-visibility: hidden;
     background-color: var(--color-surface-primary);
     border-bottom: 1px solid var(--color-surface-border);
-
-    @include tablet-or-desktop-screen {
-        display: none; // Hide header on tablet and desktop
-    }
 
     &--is-disabled:after {
         opacity: 1;

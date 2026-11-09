@@ -35,12 +35,21 @@
         display: flex;
         align-items: center;
         -webkit-box-align: center;
-        gap: 1.6rem;
+        gap: 0.8rem;
+        width: 100%;
+        justify-content: space-between;
+        padding-right: 1.2rem;
+
+        &--logged-out {
+            justify-content: flex-end;
+            padding-right: 1.6rem;
+        }
 
         @include mobile-screen {
             width: 100%;
             gap: 0.8rem;
             justify-content: space-between;
+            padding-right: 0;
 
             &--logged-out {
                 justify-content: flex-end;

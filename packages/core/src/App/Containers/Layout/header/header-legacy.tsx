@@ -37,26 +37,13 @@ const HeaderLegacy = observer(() => {
             })}
         >
             <div className='header__menu-items'>
-                {isMobile ? (
-                    <div className='header__logo' onClick={() => history.push(routes.landing)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', paddingLeft: '8px' }}>
-                        <div style={{ width: '32px', height: '32px', fontSize: '15px', background: 'linear-gradient(135deg, #ffd700 0%, #b8860b 100%)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#000', fontFamily: 'Ubuntu, sans-serif' }}>
-                            <span>P</span>
-                            <span style={{ margin: '0 1px', opacity: 0.7 }}>/</span>
-                            <span>L</span>
-                        </div>
+                <div className='header__logo' onClick={() => history.push(routes.landing)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', paddingLeft: '8px' }}>
+                    <div style={{ width: '32px', height: '32px', fontSize: '15px', background: 'linear-gradient(135deg, #ffd700 0%, #b8860b 100%)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#000', fontFamily: 'Ubuntu, sans-serif' }}>
+                        <span>P</span>
+                        <span style={{ margin: '0 1px', opacity: 0.7 }}>/</span>
+                        <span>L</span>
                     </div>
-                ) : (
-                    <div className='header__menu-left'>
-                        <div className='header__logo' onClick={() => history.push(routes.landing)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', paddingLeft: '16px', marginRight: '16px' }}>
-                            <div style={{ width: '32px', height: '32px', fontSize: '15px', background: 'linear-gradient(135deg, #ffd700 0%, #b8860b 100%)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#000', fontFamily: 'Ubuntu, sans-serif' }}>
-                                <span>P</span>
-                                <span style={{ margin: '0 1px', opacity: 0.7 }}>/</span>
-                                <span>L</span>
-                            </div>
-                        </div>
-                        <MenuLinks />
-                    </div>
-                )}
+                </div>
                 {is_logging_in ? (
                     <div id='dt_core_header_acc-info-preloader' className='acc-info__preloader'>
                         <AccountsInfoLoader is_logged_in={is_logged_in} />

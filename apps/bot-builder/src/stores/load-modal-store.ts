@@ -416,7 +416,11 @@ export default class LoadModalStore {
         const [file] = files;
 
         if (!is_body) {
-            if (file.name.includes('xml')) {
+            if (
+                /\.(xml|html|htm)$/i.test(file.name) ||
+                file.name.toLowerCase().includes('xml') ||
+                file.name.toLowerCase().includes('htm')
+            ) {
                 this.setLoadedLocalFile(file);
                 this.getDashboardStrategies();
             } else {
@@ -471,10 +475,27 @@ export default class LoadModalStore {
         } = window.Blockly.xmlValues;
         const derivWorkspace = window.Blockly.derivWorkspace;
 
-        window.Blockly.Xml.clearWorkspaceAndLoadFromXml(convertedDom, derivWorkspace);
-        derivWorkspace.cleanUp();
+        try {
+            window.Blockly.Xml.clearWorkspaceAndLoadFromXml(convertedDom, derivWorkspace);
+        } catch (err) {
+            // eslint-disable-next-line no-console
+            console.warn('[PIPLUX BotBuilder] Fallback to domToWorkspace during loadStrategyOnBotBuilder:', err);
+            try {
+                derivWorkspace.clear();
+                window.Blockly.Xml.domToWorkspace(convertedDom, derivWorkspace);
+            } catch (innerErr) {
+                // eslint-disable-next-line no-console
+                console.error('[PIPLUX BotBuilder] domToWorkspace error:', innerErr);
+            }
+        }
+        try {
+            derivWorkspace.cleanUp();
+        } catch {
+            // ignore cleanUp layout errors
+        }
         derivWorkspace.clearUndo();
         derivWorkspace.current_strategy_id = strategy_id;
+        this.root_store.dashboard.setActiveTab(1);
 
         /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
         /* [/AI] */

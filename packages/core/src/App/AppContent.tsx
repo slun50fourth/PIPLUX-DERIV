@@ -27,6 +27,7 @@ const AppContent: React.FC<{ passthrough: any }> = observer(({ passthrough }) =>
     const { isMobile } = useDevice();
     const location = useLocation();
     const isLandingPage = location.pathname === '/' || location.pathname === '/landing' || location.pathname === '/landing/';
+    const isBotPage = location.pathname === '/bot' || location.pathname.startsWith('/bot/');
 
     const { switchLanguage } = useTranslations();
     const { isBridgeAvailable, sendBridgeEvent } = useMobileBridge();
@@ -65,13 +66,13 @@ const AppContent: React.FC<{ passthrough: any }> = observer(({ passthrough }) =>
     return (
         <ThemeProvider theme={is_dark_mode_on ? 'dark' : 'light'}>
             <LandscapeBlocker />
-            {isMobile && <Header />}
+            {(isMobile || isBotPage) && <Header />}
             <ErrorBoundary root_store={store}>
                 <AppContents>
                     <Routes {...({ passthrough } as any)} />
                 </AppContents>
             </ErrorBoundary>
-            {isMobile && <BottomNav />}
+            {(isMobile || isBotPage) && <BottomNav />}
             <ErrorBoundary root_store={store}>
                 <AppModals />
             </ErrorBoundary>

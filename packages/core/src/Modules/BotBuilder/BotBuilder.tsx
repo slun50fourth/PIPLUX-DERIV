@@ -14,9 +14,7 @@
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useHistory } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { routes } from '@deriv/shared';
 import { useStore } from '@deriv/stores';
 import { botBuilderBus } from 'Services/bot-builder-bus';
 import { generateOAuthURL } from 'Services/oauth';
@@ -24,7 +22,7 @@ import './bot-builder.scss';
 
 // Trailing slash matters: the app's router basename is "/deriv-bot" and only has an index route.
 // Bump the query string to bust caches after rebuilding apps/bot-builder.
-const BOT_BUILDER_URL = '/deriv-bot/?v=3';
+const BOT_BUILDER_URL = '/deriv-bot/?v=4';
 
 // ---------------------------------------------------------------------------
 // BotBuilderBridge component — the actual iframe mount
@@ -132,224 +130,31 @@ const BotBuilderBridge: React.FC<BotBuilderBridgeProps> = observer(({ pendingXml
 });
 
 // ---------------------------------------------------------------------------
-// Main BotBuilder page — tabs: Builder | Free Bots | Upload
+// Main BotBuilder page
 // ---------------------------------------------------------------------------
 
-type Tab = 'builder' | 'free_bots' | 'upload';
-
-// Free preset bots available for one-click loading
-const FREE_BOTS = [
-    {
-        id: 'apex_range',
-        name: 'Apex Range AI',
-        description: 'Multi-market digit range bot with martingale recovery.',
-        xmlFile: '/bots/Apex_Range_AI.xml',
-    },
-    {
-        id: 'apex',
-        name: 'Apex AI',
-        description: 'Classic Apex strategy for Deriv synthetics.',
-        xmlFile: '/bots/Apex_AI.xml',
-    },
-    {
-        id: 'entry_scanner',
-        name: 'Entry Scanner Bot',
-        description: 'Base template for the AI Entry Scanner strategy.',
-        xmlFile: '/bots/entry_scanner_template.xml',
-    },
-];
-
 const BotBuilder: React.FC = observer(() => {
-    const history = useHistory();
-    const [activeTab, setActiveTab] = useState<Tab>('builder');
     const [pendingXml, setPendingXml] = useState<string | null>(null);
     const [pendingRun, setPendingRun] = useState(false);
-    const [loadingBot, setLoadingBot] = useState<string | null>(null);
-    const [isBotRunning, setIsBotRunning] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        const onMessage = (e: MessageEvent) => {
-            if (e.origin !== window.location.origin) return;
-            if (e.data?.type === 'dbot:running-state') {
-                setIsBotRunning(!!e.data.is_running);
-            }
-        };
-        window.addEventListener('message', onMessage);
-        return () => window.removeEventListener('message', onMessage);
-    }, []);
-
-    const handleToggleRun = () => {
-        const iframe = document.querySelector('.bot-builder-bridge__iframe') as HTMLIFrameElement | null;
-        const win = iframe?.contentWindow;
-        if (!win) return;
-        if (isBotRunning) {
-            win.postMessage({ type: 'dbot:stop-bot' }, window.location.origin);
-            setIsBotRunning(false);
-        } else {
-            win.postMessage({ type: 'dbot:run-bot' }, window.location.origin);
-            setIsBotRunning(true);
-        }
-    };
 
     useEffect(() => {
         const unsub = botBuilderBus.onLoadXml((xml, opts) => {
             setPendingXml(xml);
             setPendingRun(!!opts.autoRun);
-            setActiveTab('builder');
         });
         return () => unsub();
     }, []);
 
-    const handleFreeBot = async (bot: (typeof FREE_BOTS)[0]) => {
-        setLoadingBot(bot.id);
-        try {
-            const res = await fetch(bot.xmlFile);
-            if (!res.ok) throw new Error(`Failed to fetch ${bot.xmlFile}`);
-            const xml = await res.text();
-            setPendingXml(xml);
-            setPendingRun(false);
-            setActiveTab('builder');
-        } catch (e) {
-            console.error('[BotBuilder] Failed to load free bot:', e);
-        } finally {
-            setLoadingBot(null);
-        }
-    };
-
-    const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            const content = ev.target?.result as string;
-            if (content) {
-                let xml = content;
-                if (!xml.includes('<xml') && xml.includes('&lt;xml')) {
-                    xml = xml.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"');
-                }
-                const match = xml.match(/<xml[\s\S]*?<\/xml>/i);
-                if (match) {
-                    xml = match[0];
-                }
-                setPendingXml(xml);
-                setPendingRun(false);
-                setActiveTab('builder');
-            }
-        };
-        reader.readAsText(file);
-        // Reset input so same file can be re-uploaded
-        if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-
     return (
         <div className='bot-builder-page'>
-            {/* ── Tab Bar ── */}
-            <div className='bot-builder-page__tabs'>
-                <button
-                    className='bot-builder-page__back-btn'
-                    onClick={() => history.push(routes.trader)}
-                    title='Return to Manual Trading chart'
-                >
-                    ← Manual Trader
-                </button>
-                <button
-                    className={`bot-builder-page__tab ${activeTab === 'builder' ? 'bot-builder-page__tab--active' : ''}`}
-                    onClick={() => setActiveTab('builder')}
-                >
-                    🤖 Bot Builder
-                </button>
-                <button
-                    className={`bot-builder-page__tab ${activeTab === 'free_bots' ? 'bot-builder-page__tab--active' : ''}`}
-                    onClick={() => setActiveTab('free_bots')}
-                >
-                    📦 Free Bots
-                </button>
-                <button
-                    className={`bot-builder-page__tab ${activeTab === 'upload' ? 'bot-builder-page__tab--active' : ''}`}
-                    onClick={() => setActiveTab('upload')}
-                >
-                    ⬆️ Upload XML/HTML
-                </button>
-                <button
-                    className={`bot-builder-page__run-toggle ${isBotRunning ? 'bot-builder-page__run-toggle--running' : ''}`}
-                    onClick={handleToggleRun}
-                    title={isBotRunning ? 'Stop active bot execution' : 'Run bot strategy'}
-                >
-                    {isBotRunning ? '⏹ Stop' : '▶ Run'}
-                </button>
-            </div>
-
-            {/* ── Builder Tab (kept mounted so tab switches preserve workspace state) ── */}
-            <div style={{ display: activeTab === 'builder' ? 'flex' : 'none', flex: 1, minHeight: 0, width: '100%' }}>
-                <BotBuilderBridge
-                    pendingXml={pendingXml}
-                    pendingRun={pendingRun}
-                    onXmlLoaded={() => {
-                        setPendingXml(null);
-                        setPendingRun(false);
-                    }}
-                />
-            </div>
-
-            {/* ── Free Bots Tab ── */}
-            {activeTab === 'free_bots' && (
-                <div className='bot-builder-page__free-bots'>
-                    <h2>Free Bot Library</h2>
-                    <p className='bot-builder-page__free-bots-subtitle'>
-                        Click any bot to load it into the Bot Builder instantly.
-                    </p>
-                    <div className='bot-builder-page__bots-grid'>
-                        {FREE_BOTS.map(bot => (
-                            <div key={bot.id} className='bot-card'>
-                                <div className='bot-card__icon'>🤖</div>
-                                <div className='bot-card__info'>
-                                    <h3>{bot.name}</h3>
-                                    <p>{bot.description}</p>
-                                </div>
-                                <button
-                                    className='bot-card__load-btn'
-                                    onClick={() => handleFreeBot(bot)}
-                                    disabled={loadingBot === bot.id}
-                                >
-                                    {loadingBot === bot.id ? 'Loading…' : 'Load Bot'}
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* ── Upload Tab ── */}
-            {activeTab === 'upload' && (
-                <div className='bot-builder-page__upload'>
-                    <h2>Upload Your Bot File</h2>
-                    <p>Select a <code>.xml</code> or <code>.html</code> bot file (supports DBot XML and Microsoft Edge HTML Documents).</p>
-                    <div className='bot-builder-page__upload-zone'>
-                        <div className='bot-builder-page__upload-icon'>📂</div>
-                        <p>Drag & drop or click to select</p>
-                        <input
-                            ref={fileInputRef}
-                            type='file'
-                            accept='.xml,.html,.htm,text/xml,text/html'
-                            className='bot-builder-page__upload-input'
-                            onChange={handleUpload}
-                            id='bot-xml-upload'
-                        />
-                        <label htmlFor='bot-xml-upload' className='bot-builder-page__upload-btn'>
-                            Choose XML or HTML Bot File
-                        </label>
-                    </div>
-                    <div className='bot-builder-page__upload-tips'>
-                        <h4>Supported Formats</h4>
-                        <ul>
-                            <li>Deriv DBot and Binary Bot XML files (<code>.xml</code>).</li>
-                            <li>Microsoft Edge HTML Document bot files (<code>.html</code>, <code>.htm</code>).</li>
-                            <li>Files are loaded directly into the visual Bot Builder workspace.</li>
-                        </ul>
-                    </div>
-                </div>
-            )}
+            <BotBuilderBridge
+                pendingXml={pendingXml}
+                pendingRun={pendingRun}
+                onXmlLoaded={() => {
+                    setPendingXml(null);
+                    setPendingRun(false);
+                }}
+            />
         </div>
     );
 });
