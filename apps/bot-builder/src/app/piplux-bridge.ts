@@ -84,6 +84,17 @@ export const initPipluxBridge = (): void => {
     });
 
     waitFor(getStore)
-        .then(() => postToHost({ type: 'newdtrader:ready' }))
+        .then(store => {
+            postToHost({ type: 'newdtrader:ready' });
+            try {
+                // Keep host informed of running state
+                window.setInterval(() => {
+                    const isRunning = !!(store.run_panel?.is_running || store.run_panel?.is_stop_button_visible);
+                    postToHost({ type: 'dbot:running-state', is_running: isRunning });
+                }, 800);
+            } catch {
+                // ignore
+            }
+        })
         .catch(() => undefined);
 };

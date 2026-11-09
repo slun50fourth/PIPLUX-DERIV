@@ -35,7 +35,19 @@ const purchaseChoices = [
 
     const generator = block => {
         const ctype = block.getFieldValue('PURCHASE_LIST') || 'CALL';
-        return `Bot.purchase('${ctype}');\n`;
+        let predCode = '';
+        try {
+            const jsGen = window.Blockly.JavaScript.javascriptGenerator || window.Blockly.JavaScript;
+            if (block.getInput('PREDICTION')) {
+                const pred = jsGen.valueToCode(block, 'PREDICTION', jsGen.ORDER_ATOMIC);
+                if (pred !== undefined && pred !== '') {
+                    predCode = `if (typeof (${pred}) !== 'undefined') { try { Bot.tradeEngine.tradeOptions.prediction = (${pred}); } catch (e) {} }\n`;
+                }
+            }
+        } catch {
+            // ignore
+        }
+        return `${predCode}Bot.purchase('${ctype}');\n`;
     };
 
     if (window.Blockly.JavaScript) {

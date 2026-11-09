@@ -121,7 +121,22 @@ export default class JournalStore {
     }
 
     getServerTime() {
-        return this.core?.common.server_time.get();
+        const serverTime = this.core?.common?.server_time;
+        if (serverTime) {
+            if (typeof serverTime.toDate === 'function') {
+                return serverTime.toDate();
+            }
+            if (typeof serverTime.get === 'function') {
+                try {
+                    const res = serverTime.get();
+                    if (res) return res;
+                } catch {
+                    // ignore
+                }
+            }
+            return serverTime;
+        }
+        return new Date();
     }
 
     playAudio = (sound: string) => {

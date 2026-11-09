@@ -24,7 +24,7 @@ import './bot-builder.scss';
 
 // Trailing slash matters: the app's router basename is "/deriv-bot" and only has an index route.
 // Bump the query string to bust caches after rebuilding apps/bot-builder.
-const BOT_BUILDER_URL = '/deriv-bot/?v=1';
+const BOT_BUILDER_URL = '/deriv-bot/?v=2';
 
 // ---------------------------------------------------------------------------
 // BotBuilderBridge component — the actual iframe mount
@@ -165,7 +165,32 @@ const BotBuilder: React.FC = observer(() => {
     const [pendingXml, setPendingXml] = useState<string | null>(null);
     const [pendingRun, setPendingRun] = useState(false);
     const [loadingBot, setLoadingBot] = useState<string | null>(null);
+    const [isBotRunning, setIsBotRunning] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const onMessage = (e: MessageEvent) => {
+            if (e.origin !== window.location.origin) return;
+            if (e.data?.type === 'dbot:running-state') {
+                setIsBotRunning(!!e.data.is_running);
+            }
+        };
+        window.addEventListener('message', onMessage);
+        return () => window.removeEventListener('message', onMessage);
+    }, []);
+
+    const handleToggleRun = () => {
+        const iframe = document.querySelector('.bot-builder-bridge__iframe') as HTMLIFrameElement | null;
+        const win = iframe?.contentWindow;
+        if (!win) return;
+        if (isBotRunning) {
+            win.postMessage({ type: 'dbot:stop-bot' }, window.location.origin);
+            setIsBotRunning(false);
+        } else {
+            win.postMessage({ type: 'dbot:run-bot' }, window.location.origin);
+            setIsBotRunning(true);
+        }
+    };
 
     useEffect(() => {
         const unsub = botBuilderBus.onLoadXml((xml, opts) => {
@@ -200,7 +225,10 @@ const BotBuilder: React.FC = observer(() => {
             const content = ev.target?.result as string;
             if (content) {
                 let xml = content;
-                const match = content.match(/<xml[\s\S]*?<\/xml>/i);
+                if (!xml.includes('<xml') && xml.includes('&lt;xml')) {
+                    xml = xml.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"');
+                }
+                const match = xml.match(/<xml[\s\S]*?<\/xml>/i);
                 if (match) {
                     xml = match[0];
                 }
@@ -242,6 +270,13 @@ const BotBuilder: React.FC = observer(() => {
                     onClick={() => setActiveTab('upload')}
                 >
                     ⬆️ Upload XML/HTML
+                </button>
+                <button
+                    className={`bot-builder-page__run-toggle ${isBotRunning ? 'bot-builder-page__run-toggle--running' : ''}`}
+                    onClick={handleToggleRun}
+                    title={isBotRunning ? 'Stop active bot execution' : 'Run bot strategy'}
+                >
+                    {isBotRunning ? '⏹ Stop' : '▶ Run'}
                 </button>
             </div>
 

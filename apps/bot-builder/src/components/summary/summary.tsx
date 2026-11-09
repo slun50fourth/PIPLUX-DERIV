@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { useStore } from '@/hooks/useStore';
 import { useDevice } from '@deriv-com/ui';
 import ThemedScrollbars from '../shared_ui/themed-scrollbars';
+import Transactions from '../transactions';
 import SummaryCard from './summary-card';
 
 type TSummary = {
@@ -16,7 +17,7 @@ const Summary = observer(({ is_drawer_open }: TSummary) => {
     const { isDesktop } = useDevice();
     return (
         <div
-            className={classnames({
+            className={classnames('summary-and-transactions', {
                 'run-panel-tab__content': isDesktop,
                 'run-panel-tab__content--mobile': !isDesktop && is_drawer_open,
                 'run-panel-tab__content--summary-tab': (isDesktop && is_drawer_open) || active_tour,
@@ -35,6 +36,16 @@ const Summary = observer(({ is_drawer_open }: TSummary) => {
                     contract_info={contract_info}
                     is_bot_running={is_bot_running}
                 />
+                <div
+                    className='summary-embedded-transactions'
+                    style={{
+                        marginTop: '12px',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                        paddingTop: '8px',
+                    }}
+                >
+                    <Transactions is_drawer_open={is_drawer_open} />
+                </div>
             </ThemedScrollbars>
         </div>
     );

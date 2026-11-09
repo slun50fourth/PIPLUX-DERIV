@@ -7,6 +7,7 @@ import { useStore } from '@/hooks/useStore';
 import { getSymbolDisplayNameSync } from '@/utils/symbol-display-name';
 import { localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
+import { toMoment } from '@/utils/time';
 import ContractCardLoader from '../contract-card-loading';
 import { getCardLabels } from '../shared';
 import ContractCard from '../shared_ui/contract-card';
@@ -27,50 +28,75 @@ const SummaryCard = observer(({ contract_info, is_contract_loading, is_bot_runni
         return cleanup;
     }, [is_contract_loading]);
 
-    const card_header = contract_info ? (
-        <ContractCard.Header
-            contract_info={contract_info}
-            display_name={
-                (contract_info as any)?.underlying_symbol
-                    ? getSymbolDisplayNameSync((contract_info as any).underlying_symbol)
-                    : ''
-            }
-            getCardLabels={getCardLabels}
-            getContractTypeDisplay={getContractTypeDisplay}
-            has_progress_slider={!is_multiplier}
-            is_sold={is_contract_completed}
-            server_time={server_time}
-        />
-    ) : null;
+    const safe_server_time =
+        server_time && typeof (server_time as any).unix === 'function' ? server_time : toMoment();
 
-    const card_body = contract_info ? (
-        <ContractCard.Body
-            addToast={addToast}
-            contract_info={contract_info}
-            currency={contract_info?.currency ?? ''}
-            current_focus={current_focus}
-            error_message_alignment='left'
-            getCardLabels={getCardLabels}
-            getContractById={() => summary_card}
-            is_mobile={!isDesktop}
-            is_multiplier={is_multiplier}
-            is_accumulator={is_accumulator}
-            is_sold={is_contract_completed}
-            removeToast={removeToast}
-            server_time={server_time}
-            setCurrentFocus={setCurrentFocus}
-        />
-    ) : null;
+    let card_header: React.ReactNode = null;
+    let card_body: React.ReactNode = null;
+    let card_footer: React.ReactNode = null;
 
-    const card_footer = contract_info ? (
-        <ContractCard.Footer
-            contract_info={contract_info}
-            getCardLabels={getCardLabels}
-            is_multiplier={is_multiplier}
-            is_sell_requested={is_sell_requested}
-            onClickSell={onClickSell}
-        />
-    ) : null;
+    if (contract_info) {
+        try {
+            card_header = (
+                <ContractCard.Header
+                    contract_info={contract_info}
+                    display_name={
+                        (contract_info as any)?.underlying_symbol
+                            ? getSymbolDisplayNameSync((contract_info as any).underlying_symbol)
+                            : (contract_info as any)?.display_name || ''
+                    }
+                    getCardLabels={getCardLabels}
+                    getContractTypeDisplay={getContractTypeDisplay}
+                    has_progress_slider={!is_multiplier}
+                    is_sold={is_contract_completed}
+                    server_time={safe_server_time}
+                />
+            );
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('[SummaryCard] card_header render error:', e);
+        }
+
+        try {
+            card_body = (
+                <ContractCard.Body
+                    addToast={addToast}
+                    contract_info={contract_info}
+                    currency={contract_info?.currency ?? ''}
+                    current_focus={current_focus}
+                    error_message_alignment='left'
+                    getCardLabels={getCardLabels}
+                    getContractById={() => summary_card}
+                    is_mobile={!isDesktop}
+                    is_multiplier={is_multiplier}
+                    is_accumulator={is_accumulator}
+                    is_sold={is_contract_completed}
+                    removeToast={removeToast}
+                    server_time={safe_server_time}
+                    setCurrentFocus={setCurrentFocus}
+                />
+            );
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('[SummaryCard] card_body render error:', e);
+        }
+
+        try {
+            card_footer = (
+                <ContractCard.Footer
+                    contract_info={contract_info}
+                    getCardLabels={getCardLabels}
+                    is_multiplier={is_multiplier}
+                    is_sell_requested={is_sell_requested}
+                    onClickSell={onClickSell}
+                    server_time={safe_server_time}
+                />
+            );
+        } catch (e) {
+            // eslint-disable-next-line no-console
+            console.warn('[SummaryCard] card_footer render error:', e);
+        }
+    }
 
     const contract_el = contract_info ? (
         <React.Fragment>

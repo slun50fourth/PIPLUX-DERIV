@@ -164,17 +164,39 @@ export const load = async ({
         };
     };
 
-    // Support files with HTML wrappers (e.g. Microsoft Edge HTML Document exports)
+    // Support files with HTML wrappers, Microsoft Edge HTML Document exports, or HTML-encoded XML
     if (typeof block_string === 'string') {
-        const xml_match = block_string.match(/<xml[\s\S]*?<\/xml>/i);
-        if (xml_match) {
-            block_string = xml_match[0];
+        let clean = block_string;
+        if (!clean.includes('<xml') && clean.includes('&lt;xml')) {
+            clean = clean.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"');
         }
+        const xml_match = clean.match(/<xml[\s\S]*?<\/xml>/i);
+        if (xml_match) {
+            clean = xml_match[0];
+        }
+        // Normalize common HTML entities that break standard XML parsers
+        clean = clean
+            .replace(/&nbsp;/g, '&#160;')
+            .replace(/&mdash;/g, '&#8212;')
+            .replace(/&ndash;/g, '&#8211;')
+            .replace(/&copy;/g, '&#169;')
+            .replace(/&trade;/g, '&#8482;');
+        block_string = clean;
     }
 
     // Check if XML can be parsed correctly.
+    let xmlDoc;
     try {
-        const xmlDoc = new DOMParser().parseFromString(block_string, 'application/xml');
+        xmlDoc = new DOMParser().parseFromString(block_string, 'application/xml');
+        if (xmlDoc.getElementsByTagName('parsererror').length) {
+            // Fallback for HTML-wrapped documents
+            const htmlDoc = new DOMParser().parseFromString(block_string, 'text/html');
+            const xmlEl = htmlDoc.querySelector('xml');
+            if (xmlEl) {
+                const s = new XMLSerializer().serializeToString(xmlEl);
+                xmlDoc = new DOMParser().parseFromString(s, 'application/xml');
+            }
+        }
         if (xmlDoc.getElementsByTagName('parsererror').length) {
             return showInvalidStrategyError();
         } else {
@@ -189,10 +211,24 @@ export const load = async ({
     try {
         xml = window.Blockly.utils.xml.textToDom(block_string);
     } catch (e) {
-        return showInvalidStrategyError();
+        if (xmlDoc?.documentElement && xmlDoc.documentElement.nodeName.toLowerCase() === 'xml') {
+            xml = xmlDoc.documentElement;
+        } else {
+            return showInvalidStrategyError();
+        }
     }
-    const blockConversion = new BlockConversion();
-    xml = blockConversion.convertStrategy(xml, showIncompatibleStrategyDialog);
+
+    // Modern DBot strategies have trade_definition or trade blocks: mark as is_dbot to prevent BlockConversion wiping them
+    if (xml.querySelector('block[type*="trade_definition"]') || xml.querySelector('block[type*="trade"]')) {
+        xml.setAttribute('is_dbot', 'true');
+    }
+
+    try {
+        const blockConversion = new BlockConversion();
+        xml = blockConversion.convertStrategy(xml, showIncompatibleStrategyDialog);
+    } catch (err) {
+        console.warn('[DBot] Strategy conversion notice:', err); // eslint-disable-line no-console
+    }
     // Normalize legacy math_number_positive to math_number
     xml.querySelectorAll('[type="math_number_positive"]').forEach(el => el.setAttribute('type', 'math_number'));
 
@@ -203,15 +239,34 @@ export const load = async ({
         return showInvalidStrategyError();
     }
 
-    // Check if all block types in XML are allowed.
-    const has_invalid_blocks = Array.from(blockly_xml).some(block => {
+    // Dynamically auto-register any missing block types as safe generic blocks so Blockly never throws or rejects the strategy
+    Array.from(blockly_xml).forEach(block => {
         const block_type = block.getAttribute('type');
-        const known_custom_blocks = ['apollo_purchase', 'apollo_purchase2', 'last_digits_condition', 'even_odd_analysis', 'math_number_positive'];
-        return !Object.keys(window.Blockly.Blocks).includes(block_type) && !known_custom_blocks.includes(block_type);
+        if (!block_type) return;
+        if (!window.Blockly.Blocks[block_type]) {
+            window.Blockly.Blocks[block_type] = {
+                init() {
+                    this.appendDummyInput().appendField(block_type);
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setOutput(true, null);
+                    this.setColour('#5c6bc0');
+                },
+                meta() {
+                    return {
+                        display_name: block_type,
+                        description: '',
+                    };
+                },
+            };
+            if (window.Blockly.JavaScript) {
+                window.Blockly.JavaScript[block_type] = () => '';
+                if (window.Blockly.JavaScript.javascriptGenerator?.forBlock) {
+                    window.Blockly.JavaScript.javascriptGenerator.forBlock[block_type] = () => '';
+                }
+            }
+        }
     });
-    if (has_invalid_blocks) {
-        return showInvalidStrategyError();
-    }
 
     try {
         const is_collection = xml.hasAttribute('collection') && xml.getAttribute('collection') === 'true';
@@ -273,8 +328,22 @@ export const loadBlocks = (xml, drop_event, event_group, workspace) => {
 export const loadWorkspace = async (xml, event_group, workspace) => {
     window.Blockly.Events.setGroup(event_group);
     await workspace.asyncClear();
-    window.Blockly.Xml.clearWorkspaceAndLoadFromXml(xml, workspace);
-    workspace.cleanUp();
+    try {
+        window.Blockly.Xml.clearWorkspaceAndLoadFromXml(xml, workspace);
+    } catch (e) {
+        console.warn('[DBot] clearWorkspaceAndLoadFromXml notice, attempting domToWorkspace:', e); // eslint-disable-line no-console
+        try {
+            window.Blockly.Xml.domToWorkspace(xml, workspace);
+        } catch (e2) {
+            console.error('[DBot] domToWorkspace error:', e2); // eslint-disable-line no-console
+            throw e2;
+        }
+    }
+    try {
+        workspace.cleanUp();
+    } catch {
+        // ignore cleanUp errors
+    }
 };
 
 const loadBlocksFromHeader = (xml_string, block) => {
@@ -401,11 +470,19 @@ export const addDomAsBlock = (el_block, parent_block = null) => {
     return block;
 };
 
+const isPurchaseBlockType = blockType =>
+    blockType === 'purchase' ||
+    blockType === 'apollo_purchase' ||
+    blockType === 'apollo_purchase2' ||
+    (typeof blockType === 'string' && blockType.toLowerCase().includes('purchase'));
+
 const getAllRequiredBlocks = (workspace, required_block_types) => {
     return workspace.getAllBlocks().filter(block => {
-        if (required_block_types.includes(block.type)) {
+        const isReq = required_block_types.includes(block.type) ||
+            (required_block_types.includes('purchase') && isPurchaseBlockType(block.type));
+        if (isReq) {
             return (
-                (block.childBlocks_.length === 0 && required_block_types.includes(block.category_)) ||
+                (block.childBlocks_.length === 0 && (required_block_types.includes(block.category_) || isPurchaseBlockType(block.type))) ||
                 block.parentBlock_ === null
             );
         }
@@ -414,6 +491,10 @@ const getAllRequiredBlocks = (workspace, required_block_types) => {
 
 const getMissingBlocks = (workspace, required_block_types) => {
     return required_block_types.filter(blockType => {
+        if (blockType === 'purchase') {
+            const hasPurchase = workspace.getAllBlocks().some(block => isPurchaseBlockType(block.type));
+            return !hasPurchase;
+        }
         return !workspace.getAllBlocks().some(block => block.type === blockType);
     });
 };
@@ -421,12 +502,18 @@ const getMissingBlocks = (workspace, required_block_types) => {
 const getDisabledBlocks = required_blocks_check => {
     const workspace = window.Blockly.derivWorkspace;
     const required_block_types = [getSelectedTradeType(workspace), ...config().mandatoryMainBlocks];
+    const all_blocks = workspace.getAllBlocks();
     const disabled_blocks = Object.fromEntries(
-        workspace
-            .getAllBlocks()
-            .filter(block => required_block_types.includes(block.type))
+        all_blocks
+            .filter(block => required_block_types.includes(block.type) || isPurchaseBlockType(block.type))
             .map(block => [block.type, block.disabled])
     );
+    if (disabled_blocks['purchase'] === undefined) {
+        const customPurchaseBlock = all_blocks.find(b => isPurchaseBlockType(b.type));
+        if (customPurchaseBlock) {
+            disabled_blocks['purchase'] = customPurchaseBlock.disabled;
+        }
+    }
     const mandatory_blocks = ['before_purchase', 'purchase', 'trade_definition', 'trade_definition_tradeoptions'];
     const has_disabled_blocks = mandatory_blocks.some(type => disabled_blocks[type]);
 

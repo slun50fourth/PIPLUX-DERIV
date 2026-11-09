@@ -130,6 +130,7 @@ const DrawerHeader = ({ is_clear_stat_disabled, is_mobile, is_drawer_open, onCle
 
 const DrawerContent = ({ active_index, is_drawer_open, active_tour, setActiveTabIndex, ...props }: TDrawerContent) => {
     const { isDesktop } = useDevice();
+    const isMobileView = !isDesktop || (typeof window !== 'undefined' && window.innerWidth <= 768);
     // Use the useBlockScroll hook to prevent body scrolling when drawer is open on mobile
 
     React.useEffect(() => {
@@ -147,7 +148,7 @@ const DrawerContent = ({ active_index, is_drawer_open, active_tour, setActiveTab
     return (
         <>
             <Tabs active_index={active_index} onTabItemClick={setActiveTabIndex} top>
-                <div id='db-run-panel-tab__summary' label={<Localize i18n_default_text='Summary' />}>
+                <div id='db-run-panel-tab__summary' label={<Localize i18n_default_text='Summary & Trades' />}>
                     <Summary is_drawer_open={is_drawer_open} />
                 </div>
                 <div id='db-run-panel-tab__transactions' label={<Localize i18n_default_text='Transactions' />}>
@@ -318,6 +319,7 @@ const RunPanel = observer(() => {
     const { run_panel, dashboard, transactions } = useStore();
     const { client } = useStore();
     const { isDesktop } = useDevice();
+    const isMobileView = !isDesktop || (typeof window !== 'undefined' && window.innerWidth <= 768);
     const { currency } = client;
     const {
         active_index,
@@ -372,27 +374,27 @@ const RunPanel = observer(() => {
     const header = (
         <DrawerHeader
             is_clear_stat_disabled={is_clear_stat_disabled}
-            is_mobile={!isDesktop}
+            is_mobile={isMobileView}
             is_drawer_open={is_drawer_open}
             onClearStatClick={onClearStatClick}
         />
     );
 
     const show_run_panel = [BOT_BUILDER].includes(active_tab) || active_tour;
-    if ((!show_run_panel && isDesktop) || active_tour === 'bot_builder') return null;
+    if ((!show_run_panel && !isMobileView) || active_tour === 'bot_builder') return null;
 
     return (
         <>
-            <div className={!isDesktop && is_drawer_open ? 'run-panel__container--mobile' : 'run-panel'}>
+            <div className={isMobileView && is_drawer_open ? 'run-panel__container--mobile' : 'run-panel'}>
                 <Drawer
                     anchor='right'
                     className={classNames('run-panel', {
-                        'run-panel__container': isDesktop,
-                        'run-panel__container--tour-active': isDesktop && active_tour,
+                        'run-panel__container': !isMobileView,
+                        'run-panel__container--tour-active': !isMobileView && active_tour,
                     })}
                     contentClassName='run-panel__content'
                     header={header}
-                    footer={isDesktop && footer}
+                    footer={!isMobileView && footer}
                     is_open={is_drawer_open}
                     toggleDrawer={toggleDrawer}
                     width={366}
@@ -401,10 +403,10 @@ const RunPanel = observer(() => {
                     {content}
                 </Drawer>
             </div>
-            {!isDesktop && <MobileBottomDock />}
+            {isMobileView && <MobileBottomDock />}
 
             <StatisticsInfoModal
-                is_mobile={!isDesktop}
+                is_mobile={isMobileView}
                 is_statistics_info_modal_open={is_statistics_info_modal_open}
                 toggleStatisticsInfoModal={toggleStatisticsInfoModal}
             />

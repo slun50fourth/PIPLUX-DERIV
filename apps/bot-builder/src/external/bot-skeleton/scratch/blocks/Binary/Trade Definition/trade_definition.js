@@ -183,10 +183,27 @@ window.Blockly.JavaScript.javascriptGenerator.forBlock.trade_definition = block 
     const should_restart_on_buy_sell = restart_on_buy_sell_block.getFieldValue('TIME_MACHINE_ENABLED') !== 'FALSE';
 
     const { opposites } = config();
-    const contract_type_list =
+    const raw_contract_type_list =
         contract_type === 'both'
-            ? opposites[trade_type.toUpperCase()].map(opposite => Object.keys(opposite)[0])
+            ? (opposites[trade_type?.toUpperCase()] || []).map(opposite => Object.keys(opposite)[0])
             : [contract_type];
+
+    // Scan workspace for any additional purchase block contract types (e.g. apollo_purchase, apollo_purchase2)
+    const extra_contract_types = [];
+    try {
+        const allBlocks = block.workspace?.getAllBlocks() || [];
+        allBlocks.forEach(b => {
+            if (b.type === 'apollo_purchase' || b.type === 'apollo_purchase2' || b.type === 'purchase') {
+                const ctype = b.getFieldValue('PURCHASE_LIST');
+                if (ctype && !raw_contract_type_list.includes(ctype) && !extra_contract_types.includes(ctype)) {
+                    extra_contract_types.push(ctype);
+                }
+            }
+        });
+    } catch {
+        // ignore
+    }
+    const contract_type_list = [...new Set([...raw_contract_type_list, ...extra_contract_types])];
 
     const initialization = window.Blockly.JavaScript.javascriptGenerator.statementToCode(block, 'INITIALIZATION');
     const trade_options_statement = window.Blockly.JavaScript.javascriptGenerator.statementToCode(block, 'SUBMARKET');
