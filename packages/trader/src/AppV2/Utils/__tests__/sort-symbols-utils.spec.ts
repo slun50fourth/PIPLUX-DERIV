@@ -180,4 +180,39 @@ describe('sortSymbols', () => {
             },
         ]);
     });
+
+    it('should order Volatility indices starting with (1s) 10..100 then plain 10..100', () => {
+        const volatilitySymbols = [
+            { underlying_symbol: '1HZ75V', market: 'synthetic_index', submarket: 'random_index', subgroup: 'synthetics' },
+            { underlying_symbol: '1HZ10V', market: 'synthetic_index', submarket: 'random_index', subgroup: 'synthetics' },
+            { underlying_symbol: 'R_50', market: 'synthetic_index', submarket: 'random_index', subgroup: 'synthetics' },
+            { underlying_symbol: 'R_25', market: 'synthetic_index', submarket: 'random_index', subgroup: 'synthetics' },
+            { underlying_symbol: '1HZ25V', market: 'synthetic_index', submarket: 'random_index', subgroup: 'synthetics' },
+            { underlying_symbol: '1HZ90V', market: 'synthetic_index', submarket: 'random_index', subgroup: 'synthetics' },
+            { underlying_symbol: 'R_75', market: 'synthetic_index', submarket: 'random_index', subgroup: 'synthetics' },
+            { underlying_symbol: '1HZ15V', market: 'synthetic_index', submarket: 'random_index', subgroup: 'synthetics' },
+            { underlying_symbol: 'R_10', market: 'synthetic_index', submarket: 'random_index', subgroup: 'synthetics' },
+            { underlying_symbol: '1HZ50V', market: 'synthetic_index', submarket: 'random_index', subgroup: 'synthetics' },
+            { underlying_symbol: 'R_100', market: 'synthetic_index', submarket: 'random_index', subgroup: 'synthetics' },
+            { underlying_symbol: '1HZ30V', market: 'synthetic_index', submarket: 'random_index', subgroup: 'synthetics' },
+            { underlying_symbol: '1HZ100V', market: 'synthetic_index', submarket: 'random_index', subgroup: 'synthetics' },
+        ];
+
+        const sorted = sortSymbols(volatilitySymbols as NonNullable<TActiveSymbolsResponse['active_symbols']>);
+        expect(sorted.map(s => s.underlying_symbol)).toEqual([
+            '1HZ10V',
+            '1HZ15V',
+            '1HZ25V',
+            '1HZ30V',
+            '1HZ50V',
+            '1HZ75V',
+            '1HZ90V',
+            '1HZ100V',
+            'R_10',
+            'R_25',
+            'R_50',
+            'R_75',
+            'R_100',
+        ]);
+    });
 });

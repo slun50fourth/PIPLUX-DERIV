@@ -346,6 +346,49 @@ const PipluxHome: React.FC = observer(() => {
         return () => scroller.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // Scroll & entrance reveal animations (matching LandingPage)
+    React.useEffect(() => {
+        const scroller = scrollerRef.current;
+        if (!scroller) return undefined;
+
+        const targets = Array.from(scroller.querySelectorAll('.piplux-home__reveal'));
+        if (targets.length === 0) return undefined;
+
+        if (typeof IntersectionObserver === 'undefined') {
+            targets.forEach(el => el.classList.add('piplux-home__reveal--visible'));
+            return undefined;
+        }
+
+        const observerInstance = new IntersectionObserver(
+            entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('piplux-home__reveal--visible');
+                        observerInstance.unobserve(entry.target);
+                    }
+                });
+            },
+            { root: scroller, threshold: 0.06, rootMargin: '0px 0px -16px 0px' }
+        );
+
+        const viewportBottom = window.innerHeight || 900;
+        const rafId = window.requestAnimationFrame(() => {
+            targets.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (rect.top <= viewportBottom + 48) {
+                    el.classList.add('piplux-home__reveal--visible');
+                } else {
+                    observerInstance.observe(el);
+                }
+            });
+        });
+
+        return () => {
+            window.cancelAnimationFrame(rafId);
+            observerInstance.disconnect();
+        };
+    }, []);
+
     // 1. Fetch User Name + Available Accounts (Demo/Real) from Deriv Servers
     React.useEffect(() => {
         if (!is_logged_in && !hasStoredSession()) return undefined;
@@ -855,9 +898,17 @@ const PipluxHome: React.FC = observer(() => {
 
     return (
         <div className='piplux-home'>
+            {/* Ambient Gold Gridlines & Glowing Orbs (matching LandingPage aesthetic) */}
+            <div className='piplux-home__bg-layer' aria-hidden='true'>
+                <div className='piplux-home__grid-bg' />
+                <div className='piplux-home__ambient-glow' />
+                <div className='piplux-home__ambient-glow-secondary' />
+                <div className='piplux-home__ambient-glow-accent' />
+            </div>
+
             {/* Sticky / Shrinking Gold Balance Hero Header (State 3 -> State 4) */}
             <header className='piplux-home__hero' ref={heroRef}>
-                <div className='piplux-home__hero-inner'>
+                <div className='piplux-home__hero-inner piplux-home__hero-reveal'>
                     <div className='piplux-home__greeting-row' ref={greetingRowRef}>
                         <div>
                             <p className='piplux-home__salutation'>{getGreetingText()}</p>
@@ -964,7 +1015,11 @@ const PipluxHome: React.FC = observer(() => {
                 <main className='piplux-home__main'>
                     <div className='piplux-home__grid'>
                         {/* Card 1: Net Daily P&L (Real Settled Trades from Deriv) */}
-                        <section className='piplux-home__card piplux-home__pnl-card' aria-labelledby='pnl-heading'>
+                        <section
+                            className='piplux-home__card piplux-home__pnl-card piplux-home__reveal'
+                            style={{ transitionDelay: '0.05s' }}
+                            aria-labelledby='pnl-heading'
+                        >
                             <div className='piplux-home__pnl-header'>
                                 <div>
                                     <h2 className='piplux-home__pnl-title' id='pnl-heading'>
@@ -1097,7 +1152,8 @@ const PipluxHome: React.FC = observer(() => {
 
                         {/* Card 2: Daily Target (Sums Today's Trades — Independent of Bot Take Profit) */}
                         <section
-                            className='piplux-home__card piplux-home__target-card'
+                            className='piplux-home__card piplux-home__target-card piplux-home__reveal'
+                            style={{ transitionDelay: '0.13s' }}
                             aria-labelledby='daily-target-heading'
                         >
                             <div className='piplux-home__section-header piplux-home__section-header--compact'>
@@ -1207,9 +1263,10 @@ const PipluxHome: React.FC = observer(() => {
                             </div>
                         </section>
 
-                        {/* Card 3: ALL EVALUATED MARKETS (AI Scanner Engine) */}
+                        {/* Card 3: ALL EVALUATED MARKETS (AEGIS Engine) */}
                         <section
-                            className='piplux-home__card piplux-home__eval-card'
+                            className='piplux-home__card piplux-home__eval-card piplux-home__reveal'
+                            style={{ transitionDelay: '0.18s' }}
                             aria-labelledby='eval-markets-heading'
                         >
                             <div className='piplux-home__section-header'>
@@ -1347,7 +1404,8 @@ const PipluxHome: React.FC = observer(() => {
 
                         {/* Card 4: Global Markets & Live Quotes */}
                         <section
-                            className='piplux-home__card piplux-home__watchlist-card'
+                            className='piplux-home__card piplux-home__watchlist-card piplux-home__reveal'
+                            style={{ transitionDelay: '0.24s' }}
                             aria-labelledby='watchlist-heading'
                         >
                             <div className='piplux-home__section-header piplux-home__section-header--compact'>

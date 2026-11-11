@@ -12,7 +12,7 @@ export const AiScannerMobileDrawer: React.FC<AiScannerMobileDrawerProps> = ({ is
     return (
         <ActionSheet.Root isOpen={isOpen} onClose={onClose}>
             <ActionSheet.Portal shouldCloseOnDrag fullHeightOnOpen>
-                <ActionSheet.Header title={<Localize i18n_default_text='AI Market Scanner' />} />
+                <ActionSheet.Header title={<Localize i18n_default_text='AEGIS' />} />
                 <ActionSheet.Content style={{ height: 'calc(100dvh - 90px)', overflowY: 'auto', padding: 0 }}>
                     <AiScannerDrawerContent onClose={onClose} />
                 </ActionSheet.Content>

@@ -7,6 +7,8 @@
 
 import { toJS } from 'mobx';
 
+import { compareVolatilitySymbols } from 'AppV2/Utils/sort-symbols-utils';
+
 import { createServices } from './services';
 import { enrichActiveSymbols } from './transformers';
 import { createTransport } from './transport';
@@ -371,14 +373,24 @@ export function buildSmartChartsChampionAdapter(
                 const tradingTimes = transformations.toTradingTimesMap(plainTradingTimes);
 
                 const enriched_symbols = enrichActiveSymbols(activeSymbols, tradingTimesData.raw || {});
+                const ordered_symbols = enriched_symbols
+                    .map((item, idx) => ({ item, idx }))
+                    .sort((a, b) => {
+                        if (a.item.submarket === 'random_index' && b.item.submarket === 'random_index') {
+                            const cmp = compareVolatilitySymbols(a.item, b.item);
+                            if (cmp !== 0) return cmp;
+                        }
+                        return a.idx - b.idx;
+                    })
+                    .map(entry => entry.item);
 
                 logger.info('Chart reference data fetched successfully using optimized approach', {
-                    symbolsCount: Object.keys(enriched_symbols).length,
+                    symbolsCount: Object.keys(ordered_symbols).length,
                     tradingTimesCount: Object.keys(plainTradingTimes).length,
                 });
 
                 return {
-                    activeSymbols: enriched_symbols,
+                    activeSymbols: ordered_symbols,
                     rawData: { activeSymbols, tradingTimes: tradingTimesData.raw },
                     tradingTimes,
                 };

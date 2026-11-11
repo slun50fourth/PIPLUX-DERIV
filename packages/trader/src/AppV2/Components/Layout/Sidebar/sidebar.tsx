@@ -143,7 +143,7 @@ const Sidebar = observer(() => {
                     iconSize='sm'
                 />
             ),
-            label: localize('AI Scanner'),
+            label: localize('AEGIS'),
             onClick: handleAiScannerToggle,
             isActive: isAiScannerActive,
             dataTestId: 'dt_sidebar_ai_scanner',
@@ -271,7 +271,7 @@ const Sidebar = observer(() => {
                 };
                         case 'ai_scanner':
                 return {
-                    title: <Localize i18n_default_text='AI Market Scanner' />,
+                    title: <Localize i18n_default_text='AEGIS' />,
                     content: <AiScannerDrawerContent onClose={closeFlyout} />,
                     footer: null,
                 };

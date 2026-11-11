@@ -93,10 +93,6 @@ export const AiScannerDrawerContent: React.FC<AiScannerDrawerContentProps> = obs
         <div className='ai-scanner-drawer'>
             {/* Header info */}
             <div className='ai-scanner-drawer__header'>
-                <div className='ai-scanner-drawer__header-badge'>
-                    <span className='ai-scanner-drawer__header-badge-dot' />
-                    <Localize i18n_default_text='Reverse Engineered AI' />
-                </div>
                 <h2 className='ai-scanner-drawer__header-title'>
                     <Localize i18n_default_text='Statistical Entry Scanner' />
                 </h2>

@@ -128,10 +128,10 @@ const Trade = observer(() => {
                                 type='button'
                                 className='trade__ai-scanner-btn'
                                 onClick={() => setSidebarFlyout('ai_scanner')}
-                                aria-label='AI Scanner'
+                                aria-label='AEGIS'
                             >
                                 <span className='trade__ai-scanner-pulse' />
-                                AI Scanner
+                                AEGIS
                             </button>
                             <Guide show_guide_for_selected_contract />
                         </div>

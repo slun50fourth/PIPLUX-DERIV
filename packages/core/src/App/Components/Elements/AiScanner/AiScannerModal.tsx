@@ -27,6 +27,21 @@ import type {
 import { sound } from './audioEffects';
 
 type ViewMode = 'closed' | 'choose' | 'entry_scanner' | 'pro_ai';
+type FabPosition = { x: number; y: number };
+
+const FAB_POS_STORAGE_KEY = 'piplux_ai_fab_pos';
+const FAB_SIZE = 54;
+const FAB_MARGIN = 10;
+
+const clampFabPosition = (x: number, y: number): FabPosition => {
+  if (typeof window === 'undefined') return { x, y };
+  const maxX = Math.max(FAB_MARGIN, window.innerWidth - FAB_SIZE - FAB_MARGIN);
+  const maxY = Math.max(FAB_MARGIN, window.innerHeight - FAB_SIZE - FAB_MARGIN);
+  return {
+    x: Math.min(Math.max(FAB_MARGIN, x), maxX),
+    y: Math.min(Math.max(FAB_MARGIN, y), maxY),
+  };
+};
 
 export const AiScannerModal: React.FC = () => {
   const store = useStore();
@@ -35,6 +50,80 @@ export const AiScannerModal: React.FC = () => {
 
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<ViewMode>('choose');
+  const [fabPos, setFabPos] = useState<FabPosition | null>(() => {
+    try {
+      const raw = localStorage.getItem(FAB_POS_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
+        return clampFabPosition(parsed.x, parsed.y);
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  });
+  const [isDraggingFab, setIsDraggingFab] = useState(false);
+  const didDragFabRef = useRef(false);
+  const fabLatestPosRef = useRef<FabPosition | null>(fabPos);
+  fabLatestPosRef.current = fabPos;
+
+  useEffect(() => {
+    const handleResize = () => {
+      setFabPos((prev) => (prev ? clampFabPosition(prev.x, prev.y) : prev));
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleFabPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const btn = e.currentTarget;
+    const rect = btn.getBoundingClientRect();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const origLeft = rect.left;
+    const origTop = rect.top;
+    didDragFabRef.current = false;
+
+    try {
+      btn.setPointerCapture?.(e.pointerId);
+    } catch {
+      // Non-fatal in environments without pointer capture
+    }
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      if (!didDragFabRef.current && Math.hypot(dx, dy) > 5) {
+        didDragFabRef.current = true;
+        setIsDraggingFab(true);
+      }
+      if (didDragFabRef.current) {
+        const nextPos = clampFabPosition(origLeft + dx, origTop + dy);
+        fabLatestPosRef.current = nextPos;
+        setFabPos(nextPos);
+      }
+    };
+
+    const cleanup = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', cleanup);
+      window.removeEventListener('pointercancel', cleanup);
+      setIsDraggingFab(false);
+      if (didDragFabRef.current && fabLatestPosRef.current) {
+        try {
+          localStorage.setItem(FAB_POS_STORAGE_KEY, JSON.stringify(fabLatestPosRef.current));
+        } catch {
+          // Ignore storage quota errors
+        }
+      }
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', cleanup);
+    window.addEventListener('pointercancel', cleanup);
+  };
 
   // Entry Scanner states
   const [ticksCount, setTicksCount] = useState(500);
@@ -452,14 +541,32 @@ export const AiScannerModal: React.FC = () => {
 
   return (
     <>
-      {/* Floating AI Button at Bottom Right (Screenshots 1-4) */}
+      {/* Free-floating Draggable AI Trigger */}
       <button
-        className="ai-floating-trigger"
-        onClick={() => {
+        type="button"
+        className={`ai-floating-trigger${isDraggingFab ? ' ai-floating-trigger--dragging' : ''}`}
+        style={
+          fabPos
+            ? {
+                left: `${fabPos.x}px`,
+                top: `${fabPos.y}px`,
+                right: 'auto',
+                bottom: 'auto',
+              }
+            : undefined
+        }
+        onPointerDown={handleFabPointerDown}
+        onClick={(e) => {
+          if (didDragFabRef.current) {
+            didDragFabRef.current = false;
+            e.preventDefault();
+            return;
+          }
           setIsOpen(true);
           if (view === 'closed') setView('choose');
         }}
-        title="Open AI Scanner"
+        title="Open AEGIS (drag to move)"
+        aria-label="Open AEGIS"
       >
         <span className="ai-floating-trigger__badge">AI</span>
       </button>
@@ -471,7 +578,7 @@ export const AiScannerModal: React.FC = () => {
             {/* Header */}
             <div className="ai-modal-header">
               <h2>
-                {view === 'choose' && 'AI Scanner'}
+                {view === 'choose' && 'AEGIS'}
                 {view === 'entry_scanner' && 'Entry Scanner'}
                 {view === 'pro_ai' && 'Pro AI'}
               </h2>

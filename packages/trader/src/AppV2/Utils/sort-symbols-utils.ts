@@ -43,6 +43,54 @@ const getSubmarketDisplayName = (submarket: string) => {
     return submarket_display_names[submarket] || submarket;
 };
 
+type TVolatilitySortable = {
+    underlying_symbol?: string;
+    symbol?: string;
+    display_name?: string;
+    submarket?: string;
+};
+
+const getVolatilitySortKey = (symbolObj: TVolatilitySortable): { group: number; value: number } | null => {
+    const code = (symbolObj.underlying_symbol || symbolObj.symbol || '').trim();
+    const displayName = (symbolObj.display_name || '').trim();
+
+    const oneSecCodeMatch = code.match(/^1HZ(\d+)V$/i);
+    if (oneSecCodeMatch) {
+        return { group: 0, value: Number(oneSecCodeMatch[1]) };
+    }
+    const oneSecNameMatch = displayName.match(/volatility\s+(\d+)\s*\(1s\)/i);
+    if (oneSecNameMatch) {
+        return { group: 0, value: Number(oneSecNameMatch[1]) };
+    }
+
+    const plainCodeMatch = code.match(/^R_(\d+)$/i);
+    if (plainCodeMatch) {
+        return { group: 1, value: Number(plainCodeMatch[1]) };
+    }
+    const plainNameMatch = displayName.match(/volatility\s+(\d+)\b/i);
+    if (plainNameMatch && !/\(1s\)/i.test(displayName)) {
+        return { group: 1, value: Number(plainNameMatch[1]) };
+    }
+
+    return null;
+};
+
+/**
+ * Comparator placing Volatility (1s) indices numerically ascending first (10..100),
+ * followed by plain Volatility indices numerically ascending (10..100).
+ */
+export const compareVolatilitySymbols = (a: TVolatilitySortable, b: TVolatilitySortable): number => {
+    const keyA = getVolatilitySortKey(a);
+    const keyB = getVolatilitySortKey(b);
+    if (keyA && keyB) {
+        if (keyA.group !== keyB.group) return keyA.group - keyB.group;
+        return keyA.value - keyB.value;
+    }
+    if (keyA) return -1;
+    if (keyB) return 1;
+    return 0;
+};
+
 const sortSymbols = (symbolsList: ActiveSymbols) => {
     const marketSortingOrder = ['synthetic_index', 'forex', 'indices', 'cryptocurrency', 'commodities'];
     const marketOrderMap: MarketOrderMap = marketSortingOrder.reduce(
@@ -59,7 +107,14 @@ const sortSymbols = (symbolsList: ActiveSymbols) => {
         if (marketOrderA !== marketOrderB) {
             return marketOrderA - marketOrderB;
         }
-        return getSubmarketDisplayName(a.submarket).localeCompare(getSubmarketDisplayName(b.submarket));
+        const submarketCompare = getSubmarketDisplayName(a.submarket).localeCompare(getSubmarketDisplayName(b.submarket));
+        if (submarketCompare !== 0) {
+            return submarketCompare;
+        }
+        if (a.submarket === 'random_index' && b.submarket === 'random_index') {
+            return compareVolatilitySymbols(a, b);
+        }
+        return 0;
     });
 };
 
