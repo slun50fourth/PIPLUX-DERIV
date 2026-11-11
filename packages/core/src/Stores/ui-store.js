@@ -22,7 +22,7 @@ export default class UIStore extends BaseStore {
     settings_extension = undefined;
     notification_messages_ui = undefined;
 
-    is_dark_mode_on = window?.matchMedia?.('(prefers-color-scheme: dark)').matches && isMobile();
+    is_dark_mode_on = true;
     is_settings_modal_on = false;
     is_mobile_language_menu_open = false;
 
@@ -353,6 +353,12 @@ export default class UIStore extends BaseStore {
         });
 
         window.addEventListener('resize', this.handleResize);
+        if (typeof window !== 'undefined' && window.localStorage) {
+            if (localStorage.getItem('piplux_dark_default_v1') !== 'true') {
+                this.is_dark_mode_on = true;
+                localStorage.setItem('piplux_dark_default_v1', 'true');
+            }
+        }
         autorun(() => {
             this.changeTheme();
         });
@@ -361,9 +367,15 @@ export default class UIStore extends BaseStore {
         if (this.is_dark_mode_on) {
             document.body.classList.remove('theme--light');
             document.body.classList.add('theme--dark');
+            if (typeof window !== 'undefined' && window.localStorage) {
+                localStorage.setItem('theme', 'dark');
+            }
         } else {
             document.body.classList.remove('theme--dark');
             document.body.classList.add('theme--light');
+            if (typeof window !== 'undefined' && window.localStorage) {
+                localStorage.setItem('theme', 'light');
+            }
         }
     };
 

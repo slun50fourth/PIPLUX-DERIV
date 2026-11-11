@@ -134,6 +134,8 @@ const AccountSwitcher = observer(
                                         key={account.account_id}
                                         className={classNames('acc-switcher__account', {
                                             'acc-switcher__account--selected': is_selected,
+                                            'acc-switcher__account--demo': account.account_type === 'demo',
+                                            'acc-switcher__account--real': account.account_type === 'real',
                                         })}
                                         onClick={() => handleAccountClick(account)}
                                         disabled={is_selected}

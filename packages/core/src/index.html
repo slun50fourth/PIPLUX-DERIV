@@ -4,8 +4,8 @@
         <!-- Set skeleton theme color properties -->
         <style>
             :root {
-                --color-surface-primary: #fff;
-                --color-text-primary: #000;
+                --color-surface-primary: #0e0e0e;
+                --color-text-primary: #fff;
                 --initial-loader-display: flex;
             }
 
@@ -36,20 +36,42 @@
         <script type="text/javascript">
             var l = window.location;
 
+            // Ensure dark mode is the default across main app and bot-builder
+            try {
+                if (localStorage.getItem('piplux_dark_default_v1') !== 'true') {
+                    localStorage.setItem('piplux_dark_default_v1', 'true');
+                    localStorage.setItem('theme', 'dark');
+                    var existing_ui = localStorage.getItem('ui_store');
+                    if (existing_ui) {
+                        var parsed_ui = JSON.parse(existing_ui);
+                        parsed_ui.is_dark_mode_on = true;
+                        localStorage.setItem('ui_store', JSON.stringify(parsed_ui));
+                    } else {
+                        localStorage.setItem('ui_store', JSON.stringify({ is_dark_mode_on: true }));
+                    }
+                } else if (!localStorage.getItem('theme')) {
+                    localStorage.setItem('theme', 'dark');
+                }
+            } catch (e) {}
+
             // Check URL parameter first (takes priority)
             var urlParams = new URLSearchParams(l.search);
             var themeParam = urlParams.get('theme');
 
             var ui_store = localStorage.getItem('ui_store');
-            var is_dark_theme = false;
+            var is_dark_theme = true;
 
             if (themeParam === 'dark') {
                 is_dark_theme = true;
             } else if (themeParam === 'light') {
                 is_dark_theme = false;
             } else if (ui_store && ui_store.length > 0) {
-                // Fallback to localStorage if no URL parameter
-                is_dark_theme = JSON.parse(ui_store).is_dark_mode_on || false;
+                try {
+                    var parsed_store = JSON.parse(ui_store);
+                    is_dark_theme = parsed_store.is_dark_mode_on !== false;
+                } catch (e) {
+                    is_dark_theme = true;
+                }
             }
 
             if (is_dark_theme) {

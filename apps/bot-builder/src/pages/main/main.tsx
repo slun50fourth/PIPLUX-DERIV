@@ -203,6 +203,20 @@ const AppWrapper = observer(() => {
 
         // Handle URL trade type parameters when switching to Bot Builder tab
         if (active_tab === BOT_BUILDER) {
+            // Clear any stale touch state from tab switch and resize Blockly SVG viewport
+            window.Blockly?.Touch?.clearTouchIdentifier?.();
+            window.Blockly?.derivWorkspace?.clearGesture?.();
+            requestAnimationFrame(() => {
+                if (window.Blockly?.derivWorkspace) {
+                    window.Blockly.svgResize(window.Blockly.derivWorkspace);
+                }
+            });
+            setTimeout(() => {
+                if (window.Blockly?.derivWorkspace) {
+                    window.Blockly.svgResize(window.Blockly.derivWorkspace);
+                }
+            }, 150);
+
             // Use requestAnimationFrame to ensure Blockly workspace is fully initialized
             requestAnimationFrame(() => {
                 // Disable automatic URL parameter application to prevent changes before modal

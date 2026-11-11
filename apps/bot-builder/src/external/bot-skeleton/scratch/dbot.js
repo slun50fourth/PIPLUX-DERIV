@@ -142,7 +142,7 @@ class DBot {
                     media: 'assets/media/',
                     renderer: 'zelos',
                     trashcan: !is_mobile,
-                    zoom: { wheel: true, startScale: workspaceScale },
+                    zoom: { wheel: true, pinch: true, startScale: workspaceScale, minScale: 0.35, maxScale: 1.5 },
                     scrollbars: true,
                     theme: window.Blockly.Themes.zelos_renderer,
                 });

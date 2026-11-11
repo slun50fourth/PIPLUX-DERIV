@@ -1488,8 +1488,9 @@ export default class TradeStore extends BaseStore {
             }
         }
 
-        // Set stake to default one (from contracts_for) on symbol or contract type switch.
-        // On contract type we also additionally reset take profit and stop loss
+        // Keep stake (amount) constant when switching symbol or contract type if the user already has a valid stake.
+        // Only fall back to default_stake if there is no existing positive stake value.
+        // On contract type change we still reset take profit and stop loss.
         if (this.default_stake && this.is_dtrader_v2) {
             const has_symbol_changed = obj_new_values.symbol && this.symbol && this.symbol !== obj_new_values.symbol;
             const has_contract_type_changed =
@@ -1497,7 +1498,14 @@ export default class TradeStore extends BaseStore {
                 obj_old_values?.contract_type &&
                 obj_new_values.contract_type !== obj_old_values.contract_type;
 
-            if (has_symbol_changed || has_contract_type_changed) {
+            const current_amount = obj_new_values.amount ?? this.amount;
+            const has_valid_stake =
+                current_amount !== undefined &&
+                current_amount !== null &&
+                String(current_amount) !== '' &&
+                Number(current_amount) > 0;
+
+            if ((has_symbol_changed || has_contract_type_changed) && !has_valid_stake) {
                 const is_crypto = isCryptocurrency(this.currency ?? '');
                 const default_crypto_value = getMinPayout(this.currency ?? '') ?? '';
                 obj_new_values.amount = is_crypto ? default_crypto_value : this.default_stake;
