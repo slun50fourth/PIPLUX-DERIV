@@ -23,6 +23,7 @@ import { TradeParameters } from 'AppV2/Components/TradeParameters';
 import TradeParamsFooter from 'AppV2/Components/TradeParamsFooter';
 // Commented out to use chart's native market selector instead
 // import MarketSelector from 'AppV2/Components/MarketSelector';
+import useApplyScannerSetup from 'AppV2/Hooks/useApplyScannerSetup';
 import useContractsFor from 'AppV2/Hooks/useContractsFor';
 import useDefaultSymbol from 'AppV2/Hooks/useDefaultSymbol';
 import useTabletLandscape from 'AppV2/Hooks/useTabletLandscape';
@@ -59,6 +60,7 @@ const TradeDesktop = observer(() => {
     } = useTraderStore();
     const { trade_types } = useContractsFor();
     useDefaultSymbol(); // This will initialize and set the default symbol
+    useApplyScannerSetup({ active_symbols, onChange });
     const { should_show_portrait_loader } = useTabletLandscape({
         is_chart_loading,
         should_show_active_symbols_loading,

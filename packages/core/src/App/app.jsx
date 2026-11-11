@@ -72,9 +72,8 @@ const App = ({ root_store }) => {
 
         exchangeCodeForToken(code)
             .then(() => {
-                // Token is now in sessionStorage. Reload directly to /trader
-                // so initStore boots straight into WebTrader without flashing the landing page.
-                window.location.replace('/trader');
+                // Token is now in sessionStorage. Reload directly to Home (/).
+                window.location.replace('/');
             })
             .catch(err => {
                 // eslint-disable-next-line no-console

@@ -124,6 +124,10 @@ const BottomNav = observer(({ className }: BottomNavProps) => {
             const reportsIdx = bottomNavItems.findIndex(item => item.path === routes.reports);
             if (reportsIdx > -1) return reportsIdx;
         }
+        if (location.pathname === routes.index || location.pathname === routes.landing) {
+            const homeIdx = bottomNavItems.findIndex(item => item.action === 'home');
+            if (homeIdx > -1) return homeIdx;
+        }
         const idx = bottomNavItems.findIndex(item => item.path === location.pathname);
         return idx > -1 ? idx : 1; // Default to Trade
     }, [bottomNavItems, location.pathname]);

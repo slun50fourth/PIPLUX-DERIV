@@ -14,6 +14,7 @@ import MarketSelector from 'AppV2/Components/MarketSelector';
 import OnboardingGuide from 'AppV2/Components/OnboardingGuide/GuideForPages';
 import TradeErrorSnackbar from 'AppV2/Components/TradeErrorSnackbar';
 import { TradeParametersContainer } from 'AppV2/Components/TradeParameters';
+import useApplyScannerSetup from 'AppV2/Hooks/useApplyScannerSetup';
 import useContractsFor from 'AppV2/Hooks/useContractsFor';
 import useDefaultSymbol from 'AppV2/Hooks/useDefaultSymbol';
 import { getChartHeight } from 'AppV2/Utils/layout-utils';
@@ -51,6 +52,7 @@ const Trade = observer(() => {
     } = useTraderStore();
     const { trade_types } = useContractsFor();
     useDefaultSymbol(); // This will initialize and set the default symbol
+    useApplyScannerSetup({ active_symbols, onChange });
     const [guide_dtrader_v2] = useLocalStorageData<Record<string, boolean>>('guide_dtrader_v2', {
         trade_types_selection: false,
         trade_page: false,

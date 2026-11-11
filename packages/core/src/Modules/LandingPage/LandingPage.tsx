@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getHelpCentreUrl, redirectToLogin, redirectToSignUp, routes } from '@deriv/shared';
-import { useStore } from '@deriv/stores';
+import { observer, useStore } from '@deriv/stores';
+import PipluxHome from './PipluxHome';
 import './LandingPage.scss';
 
 interface TickerAsset {
@@ -23,7 +24,7 @@ const INITIAL_TICKERS: TickerAsset[] = [
   { id: 'cryBTCUSD', name: 'Bitcoin (BTC/USD)', category: 'Crypto', price: 67450.00, change: +3.45, isUp: true, digits: 2 },
 ];
 
-const LandingPage: React.FC = () => {
+const LandingPage: React.FC = observer(() => {
   const history = useHistory();
   const { client, common } = useStore();
   const { is_logged_in } = client;
@@ -122,13 +123,13 @@ const LandingPage: React.FC = () => {
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    if (is_logged_in || urlParams.has('code') || urlParams.has('token1') || urlParams.has('acct1')) {
+    if (urlParams.has('code') || urlParams.has('token1') || urlParams.has('acct1')) {
       history.replace({
         pathname: routes.trader,
         search: window.location.search,
       });
     }
-  }, [is_logged_in, history]);
+  }, [history]);
 
   const handleSignUp = async () => {
     if (is_logged_in) {
@@ -178,6 +179,10 @@ const LandingPage: React.FC = () => {
 
   if (isLoginRedirect) {
     return null;
+  }
+
+  if (is_logged_in) {
+    return <PipluxHome />;
   }
 
   return (
@@ -659,6 +664,6 @@ const LandingPage: React.FC = () => {
       </div>
     </div>
   );
-};
+});
 
 export default LandingPage;

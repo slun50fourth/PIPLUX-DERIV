@@ -27,6 +27,7 @@ const AppContent: React.FC<{ passthrough: any }> = observer(({ passthrough }) =>
     const { isMobile } = useDevice();
     const location = useLocation();
     const isLandingPage = location.pathname === '/' || location.pathname === '/landing' || location.pathname === '/landing/';
+    const isHomeHub = isLandingPage && store.client.is_logged_in;
     const isBotPage = location.pathname === '/bot' || location.pathname.startsWith('/bot/');
 
     const { switchLanguage } = useTranslations();
@@ -51,7 +52,7 @@ const AppContent: React.FC<{ passthrough: any }> = observer(({ passthrough }) =>
         }
     }, [isBridgeAvailable, sendBridgeEvent, current_language, is_dark_mode_on]);
 
-    if (isLandingPage) {
+    if (isLandingPage && !isHomeHub) {
         return (
             <React.Fragment>
                 <LandscapeBlocker />
@@ -66,19 +67,23 @@ const AppContent: React.FC<{ passthrough: any }> = observer(({ passthrough }) =>
     return (
         <ThemeProvider theme={is_dark_mode_on ? 'dark' : 'light'}>
             <LandscapeBlocker />
-            {(isMobile || isBotPage) && <Header />}
+            {!isHomeHub && (isMobile || isBotPage) && <Header />}
             <ErrorBoundary root_store={store}>
-                <AppContents>
+                {isHomeHub ? (
                     <Routes {...({ passthrough } as any)} />
-                </AppContents>
+                ) : (
+                    <AppContents>
+                        <Routes {...({ passthrough } as any)} />
+                    </AppContents>
+                )}
             </ErrorBoundary>
-            {(isMobile || isBotPage) && <BottomNav />}
+            {(isMobile || isBotPage || isHomeHub) && <BottomNav />}
             <ErrorBoundary root_store={store}>
                 <AppModals />
             </ErrorBoundary>
             <AppToastMessages />
             <Devtools />
-            <AiScannerModal />
+            {!isHomeHub && <AiScannerModal />}
         </ThemeProvider>
     );
 });

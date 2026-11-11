@@ -81,6 +81,19 @@ export const SCAN_MARKETS: Array<{ symbol: string; submarket: string }> = [
   { symbol: '1HZ100V',submarket: 'random_index' },
 ];
 
+export const SCAN_MARKET_NAMES: Record<string, string> = {
+  R_10: 'Volatility 10 Index',
+  R_25: 'Volatility 25 Index',
+  R_50: 'Volatility 50 Index',
+  R_75: 'Volatility 75 Index',
+  R_100: 'Volatility 100 Index',
+  '1HZ10V': 'Volatility 10 (1s) Index',
+  '1HZ25V': 'Volatility 25 (1s) Index',
+  '1HZ50V': 'Volatility 50 (1s) Index',
+  '1HZ75V': 'Volatility 75 (1s) Index',
+  '1HZ100V': 'Volatility 100 (1s) Index',
+};
+
 /** Default scan configuration (mirrors n3 sanitiser defaults). */
 export const DEFAULT_SCAN_CONFIG: Required<ScanConfig> = {
   tickCount:    500,
@@ -368,6 +381,45 @@ export async function runEntryScan(
   }
 
   return globalBest;
+}
+
+/**
+ * Scans all synthetic markets in parallel and returns both the top result
+ * and all evaluated market setups sorted by composite quality score.
+ */
+export async function runEntryScanAll(
+  api: DerivApiClient,
+  config: ScanConfig = {},
+  onProgress?: ScanProgressCallback
+): Promise<{ best: ScanResult | null; allResults: ScanResult[] }> {
+  const tickCount = Math.min(5000, Math.max(100, config.tickCount ?? DEFAULT_SCAN_CONFIG.tickCount));
+  const total = SCAN_MARKETS.length;
+  let completed = 0;
+  let globalBest: ScanResult | null = null;
+  const allResults: ScanResult[] = [];
+
+  await Promise.allSettled(
+    SCAN_MARKETS.map(({ symbol, submarket }) =>
+      scanMarket(api, symbol, submarket, tickCount, SCAN_PROFILES).then(result => {
+        completed++;
+        if (result) {
+          allResults.push(result);
+          if (!globalBest || result.metrics.qualityScore > globalBest.metrics.qualityScore) {
+            globalBest = result;
+          }
+        }
+        onProgress?.(completed, total, globalBest);
+        return result;
+      })
+    )
+  );
+
+  allResults.sort((a, b) => b.metrics.qualityScore - a.metrics.qualityScore);
+
+  return {
+    best: globalBest,
+    allResults,
+  };
 }
 
 // ---------------------------------------------------------------------------
