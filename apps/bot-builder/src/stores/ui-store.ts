@@ -2,9 +2,9 @@ import { action, makeObservable, observable } from 'mobx';
 import { isTouchDevice } from '@/components/shared/utils/screen/responsive';
 
 export default class UiStore {
-    is_mobile = true;
-    is_desktop = true;
-    is_tablet = false;
+    is_mobile = typeof window !== 'undefined' ? window.innerWidth <= 767 : true;
+    is_desktop = typeof window !== 'undefined' ? window.innerWidth > 1024 : true;
+    is_tablet = typeof window !== 'undefined' ? window.innerWidth > 767 && window.innerWidth <= 1024 : false;
     is_chart_layout_default = true;
     is_dark_mode_on = localStorage.getItem('theme') !== 'light';
     account_switcher_disabled_message = '';

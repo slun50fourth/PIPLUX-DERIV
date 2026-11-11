@@ -144,7 +144,6 @@ window.Blockly.WorkspaceSvg.prototype.cleanUp = function (x = 0, y = 0, blocks_t
     this.setResizesEnabled(false);
     window.Blockly.Events.setGroup(window.Blockly.Events.getGroup() || true);
 
-    const is_mobile = Boolean(DBotStore.instance?.is_mobile || window.innerWidth <= 768);
     const is_import = blocks_to_clean.length !== 0;
     const top_blocks = is_import ? blocks_to_clean : this.getTopBlocks(true);
     const root_blocks = top_blocks
@@ -154,12 +153,10 @@ window.Blockly.WorkspaceSvg.prototype.cleanUp = function (x = 0, y = 0, blocks_t
                 config().mainBlocks.findIndex(main_block_type => main_block_type === block.type);
             return blockIndex(a) - blockIndex(b);
         });
-    const column_count = is_mobile ? 1 : 2;
+    const column_count = 2;
     const blocks_per_column = Math.ceil(root_blocks.length / column_count);
 
-    const base_x = is_mobile ? 16 : 0;
-    const base_y = is_mobile ? 32 : 56;
-    let original_cursor_y = is_import ? y : base_y;
+    let original_cursor_y = y;
 
     const MINIMUM_BLOCK_X_WIDTH = 650;
 
@@ -169,14 +166,14 @@ window.Blockly.WorkspaceSvg.prototype.cleanUp = function (x = 0, y = 0, blocks_t
         root_blocks.forEach((block, index) => {
             block?.svgGroup_?.setAttribute('data-testid', block?.type);
             if (index === (column_index + 1) * blocks_per_column) {
-                original_cursor_y = is_import ? y : base_y;
+                original_cursor_y = y;
                 column_index++;
             }
 
             const xy = block.getRelativeToSurfaceXY();
 
-            const cursor_x = is_import ? x : base_x - xy.x;
-            const cursor_y = original_cursor_y - (is_import ? 0 : xy.y);
+            const cursor_x = is_import ? x : -xy.x;
+            const cursor_y = original_cursor_y - (is_import ? 0 : xy.y) + (DBotStore.instance.is_mobile ? 50 : 0);
 
             if (column_index === 0) {
                 block.moveBy(cursor_x, cursor_y);

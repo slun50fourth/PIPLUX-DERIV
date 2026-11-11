@@ -1,45 +1,6 @@
-import DBotStore from '../dbot-store';
-
 /**
- * Ensure stale touch identifiers from interrupted/cancelled mobile touch gestures
- * never lock out subsequent pointerdown events on the Blockly workspace.
- */
-if (window.Blockly?.Touch) {
-    const originalCheckTouchIdentifier = window.Blockly.Touch.checkTouchIdentifier;
-    window.Blockly.Touch.checkTouchIdentifier = function (e) {
-        if (e && e.type === 'pointerdown') {
-            const activeGesture = window.Blockly?.derivWorkspace?.currentGesture_;
-            if (!activeGesture || !activeGesture.isDragging()) {
-                window.Blockly.Touch.clearTouchIdentifier();
-            }
-        }
-        return originalCheckTouchIdentifier.call(this, e);
-    };
-}
-
-/**
- * Ensure stale non-dragging gestures on WorkspaceSvg are cleaned up on new pointerdown
- * instead of aborting the new gesture.
- */
-if (window.Blockly?.WorkspaceSvg?.prototype?.getGesture) {
-    const originalGetGesture = window.Blockly.WorkspaceSvg.prototype.getGesture;
-    window.Blockly.WorkspaceSvg.prototype.getGesture = function (e) {
-        if (e && e.type === 'pointerdown' && this.currentGesture_ && !this.currentGesture_.isDragging()) {
-            try {
-                this.currentGesture_.dispose();
-            } catch (err) {
-                // ignore disposal errors on stale gesture
-            }
-            this.clearGesture();
-            window.Blockly?.Touch?.clearTouchIdentifier?.();
-        }
-        return originalGetGesture.call(this, e);
-    };
-}
-
-/**
- * Bind pointercancel in addition to pointerup so mobile browser scroll/gesture cancellations
- * always clean up Blockly's active gesture and touchIdentifier.
+ * Bind pointercancel in addition to pointerup so interrupted mobile browser touches
+ * always end cleanly instead of locking workspace gestures or block dragging.
  */
 const originalBindMouseEvents = window.Blockly.Gesture.prototype.bindMouseEvents;
 window.Blockly.Gesture.prototype.bindMouseEvents = function (e) {
@@ -58,52 +19,34 @@ window.Blockly.Gesture.prototype.bindMouseEvents = function (e) {
 };
 
 /**
- * Record touch start timestamp on block touch so quick swipes on mobile scroll the workspace
- * instead of accidentally dragging blocks out of position.
+ * Prevent cursor/touch from locking onto a dragged block if the user releases
+ * the pointer outside the Bot Builder iframe or the window loses focus.
  */
-const originalHandleBlockStart = window.Blockly.Gesture.prototype.handleBlockStart;
-window.Blockly.Gesture.prototype.handleBlockStart = function (e, block) {
-    this.blockTouchStartTime_ = Date.now();
-    return originalHandleBlockStart.call(this, e, block);
-};
+if (typeof window !== 'undefined' && !window.__pipluxGestureCleanupAttached) {
+    window.__pipluxGestureCleanupAttached = true;
 
-/**
- * On mobile, prevent accidental dragging of the 4 main root blocks (1. Trade parameters,
- * 2. Purchase conditions, 3. Sell conditions, 4. Restart trading conditions) and route
- * quick swipe gestures (< 300ms before exceeding drag radius) to workspace scrolling.
- */
-window.Blockly.Gesture.prototype.updateIsDraggingBlock = function () {
-    if (!this.targetBlock) {
-        return false;
-    }
-    if (this.flyout) {
-        if (this.updateIsDraggingFromFlyout()) {
-            this.startDraggingBlock();
-            return true;
+    const releaseDanglingGesture = () => {
+        const ws = window.Blockly?.derivWorkspace;
+        if (ws?.currentGesture_?.isDragging?.()) {
+            ws.cancelCurrentGesture();
+            window.Blockly?.Touch?.clearTouchIdentifier?.();
         }
-        return false;
-    }
+    };
 
-    const is_mobile = window.innerWidth <= 768 || Boolean(DBotStore.instance?.is_mobile);
-    if (is_mobile) {
-        // Never drag the main root container blocks on mobile; pan/scroll the workspace instead
-        if (this.targetBlock.isMainBlock?.()) {
-            return false;
-        }
-        // For child blocks on mobile, a quick swipe (< 300ms) pans the workspace;
-        // press-and-hold (>= 300ms) drags the block.
-        const touchElapsed = Date.now() - (this.blockTouchStartTime_ || 0);
-        if (touchElapsed < 300) {
-            return false;
-        }
-    }
+    window.addEventListener('blur', releaseDanglingGesture);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) releaseDanglingGesture();
+    });
 
-    if (this.targetBlock.isMovable()) {
-        this.startDraggingBlock();
-        return true;
+    try {
+        if (window.parent && window.parent !== window && window.parent.document) {
+            window.parent.document.addEventListener('pointerup', releaseDanglingGesture, true);
+            window.parent.document.addEventListener('pointercancel', releaseDanglingGesture, true);
+        }
+    } catch {
+        // Ignore cross-origin access if hosted standalone
     }
-    return false;
-};
+}
 
 /**
  * Update this gesture to record whether a block is being dragged from the
