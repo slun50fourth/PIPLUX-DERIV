@@ -139,12 +139,24 @@ export const getStoredToken = (): string | null => {
         const info = JSON.parse(sessionStorage.getItem(AUTH_INFO_KEY) ?? 'null');
         if (!info) return null;
         if (info.expires_at && Date.now() >= info.expires_at) {
-            clearTokens();
-            return null;
+            // Preserve auth_info if a refresh_token is available so ensureValidToken/refreshAccessToken can renew it.
+            if (!info.refresh_token) {
+                clearTokens();
+                return null;
+            }
         }
         return info.access_token ?? null;
     } catch {
         return null;
+    }
+};
+
+export const hasStoredSession = (): boolean => {
+    try {
+        const info = JSON.parse(sessionStorage.getItem(AUTH_INFO_KEY) ?? 'null');
+        return Boolean(info && (info.access_token || info.refresh_token));
+    } catch {
+        return false;
     }
 };
 
@@ -156,22 +168,68 @@ export const clearTokens = (): void => {
 // Token refresh
 // ---------------------------------------------------------------------------
 
+let refresh_promise: Promise<string> | null = null;
+
 export const refreshAccessToken = async (): Promise<string> => {
-    const info = JSON.parse(sessionStorage.getItem(AUTH_INFO_KEY) ?? 'null');
-    if (!info?.refresh_token) throw new Error('No refresh token stored');
+    if (refresh_promise) return refresh_promise;
 
-    const response = await fetch(`${getAuthBaseUrl()}/oauth2/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            grant_type: 'refresh_token',
-            refresh_token: info.refresh_token,
-            client_id: getOAuthClientId(),
-        }),
-    });
+    refresh_promise = (async () => {
+        const info = JSON.parse(sessionStorage.getItem(AUTH_INFO_KEY) ?? 'null');
+        if (!info?.refresh_token) throw new Error('No refresh token stored');
 
-    if (!response.ok) throw new Error(`Token refresh failed: ${response.status}`);
-    const data = await response.json();
-    storeTokens(data.access_token, data.refresh_token, data.expires_in);
-    return data.access_token;
+        const response = await fetch(`${getAuthBaseUrl()}/oauth2/token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                grant_type: 'refresh_token',
+                refresh_token: info.refresh_token,
+                client_id: getOAuthClientId(),
+            }),
+        });
+
+        if (!response.ok) {
+            if (response.status === 400 || response.status === 401 || response.status === 403) {
+                clearTokens();
+            }
+            throw new Error(`Token refresh failed: ${response.status}`);
+        }
+        const data = await response.json();
+        storeTokens(data.access_token, data.refresh_token || info.refresh_token, data.expires_in);
+        return data.access_token;
+    })();
+
+    try {
+        return await refresh_promise;
+    } finally {
+        refresh_promise = null;
+    }
+};
+
+/**
+ * Returns a non-expired access token, proactively refreshing via refresh_token
+ * if the stored token is expired or within 60s of expiry.
+ */
+export const ensureValidToken = async (): Promise<string | null> => {
+    try {
+        const info = JSON.parse(sessionStorage.getItem(AUTH_INFO_KEY) ?? 'null');
+        if (!info) return null;
+
+        const is_expiring_soon = info.expires_at && Date.now() >= info.expires_at - 60_000;
+        if (info.access_token && !is_expiring_soon) {
+            return info.access_token;
+        }
+
+        if (info.refresh_token) {
+            return await refreshAccessToken();
+        }
+
+        if (info.expires_at && Date.now() >= info.expires_at) {
+            clearTokens();
+            return null;
+        }
+
+        return info.access_token ?? null;
+    } catch {
+        return null;
+    }
 };

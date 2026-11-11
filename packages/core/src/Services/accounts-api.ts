@@ -1,6 +1,6 @@
 import { getApiV4BaseUrl, getAppId } from '@deriv/shared';
 
-import { getStoredToken, refreshAccessToken } from './oauth';
+import { ensureValidToken, getStoredToken, refreshAccessToken } from './oauth';
 
 export type TAccount = {
     account_id: string;
@@ -27,8 +27,9 @@ const getHeaders = (includeContentType = true): HeadersInit => {
     };
 };
 
-/** Fetch wrapper: retries once with a refreshed token on 401. */
+/** Fetch wrapper: ensures token is valid/refreshed proactively and retries once on 401. */
 const apiFetch = async (url: string, options: RequestInit = {}, includeContentType = true): Promise<Response> => {
+    await ensureValidToken();
     const res = await fetch(url, { ...options, headers: getHeaders(includeContentType) });
     if (res.status === 401) {
         await refreshAccessToken();

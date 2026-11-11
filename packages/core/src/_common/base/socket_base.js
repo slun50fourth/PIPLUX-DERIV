@@ -26,12 +26,19 @@ const BinarySocketBase = (() => {
         return `${base.replace(/^https?:\/\//, 'wss://')}/trading/v1/options/ws/public`;
     };
     let configured_ws_url = null;
+    let open_connection_promise = null;
+    let needs_otp_refresh = false;
+    let connection_generation = 0;
 
-    const setWSUrl = url => {
+    const setWSUrl = (url, preserve_connected_state = false) => {
         configured_ws_url = url;
-        // Switching to an authenticated URL — treat the next onOpen as an initial connection
-        // so setIsAuthorize(false) is called correctly regardless of prior public socket state.
-        if (url) is_connected_before = false;
+        // Caller just fetched a fresh single-use OTP URL (or reset to null/public)
+        needs_otp_refresh = false;
+        connection_generation++;
+        open_connection_promise = null;
+        // Switching to a new authenticated account — treat the next onOpen as an initial connection
+        // unless we are refreshing an expired OTP during automatic reconnection.
+        if (url && !preserve_connected_state) is_connected_before = false;
     };
 
     const getWSUrl = () => configured_ws_url;
@@ -60,6 +67,8 @@ const BinarySocketBase = (() => {
     };
 
     const closeAndOpenNewConnection = () => {
+        connection_generation++;
+        open_connection_promise = null;
         if (binary_socket) {
             close();
             is_switching_socket = true;
@@ -96,99 +105,154 @@ const BinarySocketBase = (() => {
     };
 
     const openNewConnection = () => {
-        const mock_server_config = getMockServerConfig();
-        const session_id = mock_server_config?.session_id || '';
+        if (open_connection_promise) return open_connection_promise;
+        if (!isClose()) return Promise.resolve();
 
-        if (!is_switching_socket) config.wsEvent('init');
+        const my_generation = connection_generation;
+        const promise = (async () => {
+            const mock_server_config = getMockServerConfig();
+            const session_id = mock_server_config?.session_id || '';
 
-        if (isClose()) {
+            if (!is_switching_socket) config.wsEvent('init');
+
+            // OTP WebSocket URLs are single-use/short-lived. Once a socket attempt consumes the current OTP URL,
+            // any subsequent reconnect (after idle drop, wakeup, or transient error) must fetch a fresh OTP first.
+            const was_authenticated = Boolean(configured_ws_url && configured_ws_url !== getPublicWSUrl());
+            if ((was_authenticated || is_connected_before) && needs_otp_refresh && typeof config.refreshWSUrl === 'function') {
+                try {
+                    const fresh_ws_url = await config.refreshWSUrl();
+                    if (my_generation !== connection_generation) return;
+                    if (fresh_ws_url) {
+                        configured_ws_url = fresh_ws_url;
+                        needs_otp_refresh = false;
+                    }
+                } catch (err) {
+                    if (my_generation !== connection_generation) return;
+                    // eslint-disable-next-line no-console
+                    console.warn('[BinarySocket] Failed to refresh OTP WebSocket URL on reconnect:', err);
+                    reconnect_attempt_count++;
+                    config.wsEvent('close');
+                    if (
+                        reconnect_attempt_count >= 5 &&
+                        navigator.onLine !== false &&
+                        typeof config.onConnectionError === 'function'
+                    ) {
+                        config.onConnectionError(err);
+                        reconnect_attempt_count = 0;
+                    }
+                    return;
+                }
+            }
+
+            if (my_generation !== connection_generation || !isClose()) return;
+
             is_disconnect_called = false;
-            binary_socket = new WebSocket(getSocketUrl(session_id));
+            const current_socket = new WebSocket(getSocketUrl(session_id));
+            binary_socket = current_socket;
+            if (configured_ws_url && configured_ws_url !== getPublicWSUrl()) {
+                // Connecting consumes this single-use OTP URL — future reconnects must request a new one
+                needs_otp_refresh = true;
+            }
 
             // Add error event listener for connection failures
-            binary_socket.addEventListener('error', error_event => {
+            current_socket.addEventListener('error', error_event => {
+                if (current_socket !== binary_socket) return;
                 // eslint-disable-next-line no-console
                 console.error('WebSocket error:', error_event);
 
                 // Increment reconnect attempt counter
                 reconnect_attempt_count++;
 
-                // Throw error after 3 reconnect attempts
-                if (reconnect_attempt_count >= 3 && typeof config.onConnectionError === 'function') {
+                // Only surface connection error if repeated online reconnects fail
+                if (
+                    reconnect_attempt_count >= 5 &&
+                    navigator.onLine !== false &&
+                    typeof config.onConnectionError === 'function'
+                ) {
                     config.onConnectionError(error_event);
                     reconnect_attempt_count = 0; // Reset counter after throwing error
                 }
             });
 
             deriv_api = new DerivAPIBasic({
-                connection: binary_socket,
+                connection: current_socket,
                 storage: SocketCache,
                 middleware: new APIMiddleware(config),
             });
-        }
 
-        deriv_api.onOpen().subscribe(() => {
-            config.wsEvent('open');
+            deriv_api.onOpen().subscribe(() => {
+                if (current_socket !== binary_socket) return;
+                config.wsEvent('open');
 
-            // Reset reconnect attempt counter on successful connection
-            reconnect_attempt_count = 0;
+                // Reset reconnect attempt counter on successful connection
+                reconnect_attempt_count = 0;
 
-            // v4: auth is embedded in the OTP WS URL — no separate authorize message.
-            // Balance subscription serves as auth confirmation (handled in socket-general.js).
-            const is_authenticated = configured_ws_url && configured_ws_url !== getPublicWSUrl();
+                // v4: auth is embedded in the OTP WS URL — no separate authorize message.
+                // Balance subscription serves as auth confirmation (handled in socket-general.js).
+                const is_authenticated = configured_ws_url && configured_ws_url !== getPublicWSUrl();
 
-            if (is_authenticated) {
-                // Only reset authorization state on initial connection, not on reconnection
-                // On reconnection, user is still logged in and is_authorize should remain true
-                // This allows stores' reaction() to work correctly on reconnection
-                if (client_store && !is_connected_before) {
-                    client_store.setIsAuthorize(false);
+                if (is_authenticated) {
+                    // Only reset authorization state on initial connection, not on reconnection
+                    // On reconnection, user is still logged in and is_authorize should remain true
+                    // This allows stores' reaction() to work correctly on reconnection
+                    if (client_store && !is_connected_before) {
+                        client_store.setIsAuthorize(false);
+                    }
+
+                    // Subscribe to balance immediately - this also confirms authorization
+                    subscribeBalance();
+
+                    // Call all reconnection handlers on reconnection (same timing as old system)
+                    // Subscriptions will be queued by deriv-api until authorization completes
+                    if (is_connected_before && reconnect_handlers.length > 0) {
+                        reconnect_handlers.forEach(handler => {
+                            if (typeof handler === 'function') {
+                                handler();
+                            }
+                        });
+                    }
                 }
 
-                // Subscribe to balance immediately - this also confirms authorization
-                subscribeBalance();
-
-                // Call all reconnection handlers on reconnection (same timing as old system)
-                // Subscriptions will be queued by deriv-api until authorization completes
-                if (is_connected_before && reconnect_handlers.length > 0) {
-                    reconnect_handlers.forEach(handler => {
-                        if (typeof handler === 'function') {
-                            handler();
-                        }
-                    });
+                if (typeof config.onOpen === 'function') {
+                    config.onOpen(isReady());
                 }
-            }
 
-            if (typeof config.onOpen === 'function') {
-                config.onOpen(isReady());
-            }
+                if (!is_connected_before) {
+                    is_connected_before = true;
+                }
+            });
 
-            if (!is_connected_before) {
-                is_connected_before = true;
-            }
-        });
+            deriv_api.onMessage().subscribe(({ data: response }) => {
+                if (current_socket !== binary_socket) return;
+                const msg_type = response.msg_type;
+                State.set(['response', msg_type], cloneObject(response));
 
-        deriv_api.onMessage().subscribe(({ data: response }) => {
-            const msg_type = response.msg_type;
-            State.set(['response', msg_type], cloneObject(response));
+                config.wsEvent('message');
 
-            config.wsEvent('message');
+                if (typeof config.onMessage === 'function') {
+                    config.onMessage(response);
+                }
+            });
 
-            if (typeof config.onMessage === 'function') {
-                config.onMessage(response);
-            }
-        });
+            deriv_api.onClose().subscribe(() => {
+                if (current_socket !== binary_socket) return;
+                if (!is_switching_socket) {
+                    config.wsEvent('close');
+                } else {
+                    is_switching_socket = false;
+                }
 
-        deriv_api.onClose().subscribe(() => {
-            if (!is_switching_socket) {
-                config.wsEvent('close');
-            } else {
-                is_switching_socket = false;
-            }
+                if (typeof config.onDisconnect === 'function' && !is_disconnect_called) {
+                    config.onDisconnect();
+                    is_disconnect_called = true;
+                }
+            });
+        })();
 
-            if (typeof config.onDisconnect === 'function' && !is_disconnect_called) {
-                config.onDisconnect();
-                is_disconnect_called = true;
+        open_connection_promise = promise;
+        return promise.finally(() => {
+            if (open_connection_promise === promise) {
+                open_connection_promise = null;
             }
         });
     };

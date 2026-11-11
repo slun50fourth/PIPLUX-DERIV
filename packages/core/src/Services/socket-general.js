@@ -1,7 +1,8 @@
 import { getPropertyValue, getSocketURL, mapErrorMessage } from '@deriv/shared';
 import { localize } from '@deriv-com/translations';
 
-import { clearTokens, generateOAuthURL } from './oauth';
+import { fetchOTP } from './accounts-api';
+import { clearTokens, ensureValidToken, generateOAuthURL, hasStoredSession } from './oauth';
 import WS from './ws-methods';
 
 import ServerTime from '_common/base/server_time';
@@ -14,21 +15,107 @@ const BinarySocketGeneral = (() => {
     // Removed session management variables - not needed for trading app
 
     let responseTimeoutErrorTimer = null;
+    let keepAliveTimer = null;
+    let wakeupProbeTimer = null;
+    let is_lifecycle_listeners_attached = false;
+
+    const clearKeepAlive = () => {
+        clearInterval(keepAliveTimer);
+        keepAliveTimer = null;
+        clearTimeout(wakeupProbeTimer);
+        wakeupProbeTimer = null;
+    };
+
+    const startKeepAlive = () => {
+        clearKeepAlive();
+        keepAliveTimer = setInterval(() => {
+            if (navigator.onLine !== false && BinarySocket.hasReadyState(1)) {
+                BinarySocket.send({ time: 1 }).catch(() => {});
+            }
+        }, 25000);
+    };
+
+    const verifyConnectionOnWakeup = () => {
+        if (navigator.onLine === false) return;
+
+        if (!BinarySocket.getSocket() || BinarySocket.hasReadyState(2, 3)) {
+            BinarySocket.openNewConnection();
+            return;
+        }
+
+        if (BinarySocket.hasReadyState(1)) {
+            clearTimeout(wakeupProbeTimer);
+            wakeupProbeTimer = setTimeout(() => {
+                // Socket did not answer wakeup probe (half-open zombie connection after idle/sleep)
+                if (navigator.onLine !== false) {
+                    BinarySocket.closeAndOpenNewConnection();
+                }
+            }, 4000);
+
+            BinarySocket.send({ time: 1 }).catch(() => {
+                clearTimeout(wakeupProbeTimer);
+                if (BinarySocket.hasReadyState(2, 3)) {
+                    BinarySocket.openNewConnection();
+                }
+            });
+        }
+    };
+
+    const attachLifecycleListeners = () => {
+        if (is_lifecycle_listeners_attached || typeof window === 'undefined') return;
+        is_lifecycle_listeners_attached = true;
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                verifyConnectionOnWakeup();
+            }
+        });
+        window.addEventListener('focus', verifyConnectionOnWakeup);
+    };
+
+    const refreshWSUrl = async () => {
+        if (!hasStoredSession()) {
+            return BinarySocket.getWSUrl();
+        }
+
+        const loginid =
+            client_store?.loginid ||
+            sessionStorage.getItem('active_loginid') ||
+            localStorage.getItem('active_loginid');
+        if (!loginid) {
+            return BinarySocket.getWSUrl();
+        }
+
+        const token = await ensureValidToken();
+        if (!token) {
+            // Both access_token and refresh_token expired/revoked — redirect cleanly to OAuth instead of stalling.
+            clearTokens();
+            generateOAuthURL().then(url => window.location.replace(url));
+            return null;
+        }
+
+        return fetchOTP(loginid);
+    };
 
     const onDisconnect = () => {
         clearTimeout(responseTimeoutErrorTimer);
+        clearKeepAlive();
         common_store.setIsSocketOpened(false);
     };
 
     const onConnectionError = () => {
-        localStorage.removeItem('active_loginid');
-
+        // Keep active_loginid intact and auto-dismiss once BinarySocket recovers
         common_store.setError(true, {
             message: localize('Connection failed. Please refresh this page to continue.'),
+            redirectOnClick: () => {
+                common_store.setError(false, null);
+                BinarySocket.closeAndOpenNewConnection();
+            },
         });
     };
 
     const onOpen = is_ready => {
+        clearTimeout(wakeupProbeTimer);
         responseTimeoutErrorTimer = setTimeout(() => {
             const expectedResponseTypes = WS?.get?.()?.expect_response_types || {};
             const pendingResponseTypes = Object.keys(expectedResponseTypes).filter(
@@ -43,13 +130,18 @@ const BinarySocketGeneral = (() => {
         }, 30000);
 
         if (is_ready) {
+            if (common_store?.has_error) {
+                common_store.setError(false, null);
+            }
             ServerTime.init(() => common_store.setServerTime(ServerTime.get()));
             common_store.setIsSocketOpened(true);
+            startKeepAlive();
         }
     };
 
     const onMessage = response => {
         clearTimeout(responseTimeoutErrorTimer);
+        clearTimeout(wakeupProbeTimer);
         handleError(response);
 
         switch (response.msg_type) {
@@ -114,12 +206,14 @@ const BinarySocketGeneral = (() => {
     const init = store => {
         client_store = store.client;
         common_store = store.common;
+        attachLifecycleListeners();
 
         return {
             onDisconnect,
             onOpen,
             onMessage,
             onConnectionError,
+            refreshWSUrl,
         };
     };
 

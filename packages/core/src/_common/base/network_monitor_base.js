@@ -32,10 +32,13 @@ const NetworkMonitorBase = (() => {
 
         if ('onLine' in navigator) {
             window.addEventListener('online', () => {
+                reconnect_attempt = 0;
                 setNetworkStatus('blinking');
-                reconnectAfter({ timeout: 500 });
+                reconnectAfter({ timeout: 300 });
             });
             window.addEventListener('offline', () => {
+                clearTimeout(reconnect_timeout);
+                reconnect_timeout = null;
                 BinarySocket.close();
                 setNetworkStatus('offline');
             });
@@ -61,29 +64,40 @@ const NetworkMonitorBase = (() => {
 
     const isOnline = () => navigator.onLine;
 
-    // reconnect after timout,
-    // if the network status is online
-    // and the connection is closed or closing.
+    // Reconnect with bounded exponential backoff if the network is online
+    // and the WebSocket is closed or closing.
+    const BACKOFF_DELAYS_MS = [1500, 3000, 5000, 10000, 15000];
     let reconnect_timeout = null;
+    let reconnect_attempt = 0;
     function reconnectAfter({ timeout }) {
         clearTimeout(reconnect_timeout);
         reconnect_timeout = setTimeout(() => {
             reconnect_timeout = null;
-            if (isOnline() && BinarySocket.hasReadyState(2, 3)) {
+            if (!isOnline()) return;
+            if (!BinarySocket.getSocket() || BinarySocket.hasReadyState(2, 3)) {
                 BinarySocket.openNewConnection();
-            } else {
-                BinarySocket.send({ time: 1 }); // get stable status sooner
+            } else if (BinarySocket.hasReadyState(1)) {
+                BinarySocket.send({ time: 1 }).catch(() => {}); // get stable status sooner
             }
         }, timeout);
     }
     const events = {
         init: () => setNetworkStatus(isOnline() ? 'blinking' : 'offline'),
-        open: () => setNetworkStatus(isOnline() ? 'online' : 'offline'),
+        open: () => {
+            reconnect_attempt = 0;
+            clearTimeout(reconnect_timeout);
+            reconnect_timeout = null;
+            setNetworkStatus(isOnline() ? 'online' : 'offline');
+        },
         send: () => {},
         message: () => setNetworkStatus('online'),
         close: () => {
             setNetworkStatus(isOnline() ? 'blinking' : 'offline');
-            reconnectAfter({ timeout: 5000 });
+            if (isOnline()) {
+                const delay = BACKOFF_DELAYS_MS[Math.min(reconnect_attempt, BACKOFF_DELAYS_MS.length - 1)];
+                reconnect_attempt++;
+                reconnectAfter({ timeout: delay });
+            }
         },
     };
 
