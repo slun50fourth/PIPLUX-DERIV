@@ -8,6 +8,7 @@ import { mockStore, StoreProvider } from '@deriv/stores';
 import { botBuilderBus } from 'Services/bot-builder-bus';
 
 import PipluxHome from '../PipluxHome';
+import LandingPage from '../LandingPage';
 
 jest.mock('Services/accounts-api', () => ({
     fetchAccounts: jest.fn(() =>
@@ -237,5 +238,65 @@ describe('PipluxHome', () => {
         expect(pending.symbol).toBe('1HZ10V');
         expect(pending.contractType).toBe('over_under');
         expect(pending.lastDigit).toBe(1);
+    });
+
+    it('keeps PipluxHome rendered instead of marketing LandingPage during refresh or Demo/Live reload', () => {
+        localStorage.setItem(
+            'current_account',
+            JSON.stringify({ loginid: 'ROT90789546', balance: '0.40', currency: 'USD', account_type: 'real' })
+        );
+        sessionStorage.setItem(
+            'auth_info',
+            JSON.stringify({ access_token: 'test-token', expires_at: Date.now() + 60_000 })
+        );
+
+        const history = createMemoryHistory();
+        const hydratingStore = mockStore({
+            client: {
+                is_logged_in: false,
+                is_logging_in: true,
+                is_virtual: false,
+                loginid: '',
+                balance: undefined,
+                currency: '',
+            },
+            common: {
+                is_socket_opened: false,
+            },
+        });
+
+        const { container } = render(
+            <StoreProvider store={hydratingStore}>
+                <Router history={history}>
+                    <LandingPage />
+                </Router>
+            </StoreProvider>
+        );
+
+        expect(container.querySelector('.piplux-landing')).toBeNull();
+        expect(screen.getByTestId('dt_home_username')).toHaveTextContent('ROT90789546');
+        expect(screen.getByTestId('dt_home_balance')).toHaveTextContent('$ 0.40');
+    });
+
+    it('renders marketing LandingPage only when logged out with no stored session', () => {
+        const history = createMemoryHistory();
+        const loggedOutStore = mockStore({
+            client: {
+                is_logged_in: false,
+                is_logging_in: false,
+                loginid: '',
+            },
+        });
+
+        const { container } = render(
+            <StoreProvider store={loggedOutStore}>
+                <Router history={history}>
+                    <LandingPage />
+                </Router>
+            </StoreProvider>
+        );
+
+        expect(container.querySelector('.piplux-landing')).toBeInTheDocument();
+        expect(screen.queryByTestId('dt_home_balance')).toBeNull();
     });
 });

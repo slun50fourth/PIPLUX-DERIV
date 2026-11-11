@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite';
 import { addComma, getCurrencyDisplayCode, getWhoAmIURL, routes } from '@deriv/shared';
 import { useStore } from '@deriv/stores';
 import { fetchAccounts, type TAccount } from 'Services/accounts-api';
+import { hasStoredSession } from 'Services/oauth';
 import WS from 'Services/ws-methods';
 
 import {
@@ -165,6 +166,27 @@ const isUsefulProfileName = (candidate: unknown, loginid?: string | null): candi
 };
 
 const getTargetStorageKey = (loginid?: string | null) => `piplux_daily_target_${loginid || 'default'}`;
+const getDisplayNameCacheKey = (loginid?: string | null) => `piplux_display_name_${loginid || 'default'}`;
+
+type StoredAccountSnapshot = {
+    loginid?: string;
+    account_id?: string;
+    balance?: number | string;
+    currency?: string;
+    account_type?: 'demo' | 'real';
+    is_virtual?: number | boolean;
+};
+
+const readStoredAccountSnapshot = (): StoredAccountSnapshot => {
+    try {
+        const raw = localStorage.getItem('current_account');
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+        return {};
+    }
+};
 
 const loadSavedTarget = (loginid: string | undefined | null, isVirtual: boolean) => {
     const fallback = isVirtual ? 100 : 250;
@@ -199,13 +221,36 @@ const PipluxHome: React.FC = observer(() => {
     } = client;
     const { is_socket_opened } = common;
 
+    const storedSnapshot = React.useMemo(
+        () => readStoredAccountSnapshot(),
+        [loginid, balance, is_virtual, is_logged_in]
+    );
+    const snapshotLoginId = storedSnapshot.loginid || storedSnapshot.account_id || '';
+    const effectiveLoginId = loginid || snapshotLoginId;
+    const effectiveIsVirtual = loginid
+        ? is_virtual
+        : storedSnapshot.account_type
+          ? storedSnapshot.account_type === 'demo'
+          : typeof storedSnapshot.is_virtual === 'boolean' || typeof storedSnapshot.is_virtual === 'number'
+            ? Boolean(storedSnapshot.is_virtual)
+            : snapshotLoginId
+              ? /^(VR|DEM)/i.test(snapshotLoginId)
+              : is_virtual;
+    const effectiveCurrency = currency || storedSnapshot.currency || 'USD';
+
     const scrollerRef = React.useRef<HTMLDivElement>(null);
     const greetingRowRef = React.useRef<HTMLDivElement>(null);
     const modeRowRef = React.useRef<HTMLDivElement>(null);
     const heroRef = React.useRef<HTMLElement>(null);
     const targetInputRef = React.useRef<HTMLInputElement>(null);
 
-    const [displayName, setDisplayName] = React.useState<string>('');
+    const [displayName, setDisplayName] = React.useState<string>(() => {
+        try {
+            return sessionStorage.getItem(getDisplayNameCacheKey(effectiveLoginId)) || '';
+        } catch {
+            return '';
+        }
+    });
     const [accounts, setAccounts] = React.useState<TAccount[]>([]);
     const [isSwitchingAccount, setIsSwitchingAccount] = React.useState(false);
 
@@ -221,9 +266,11 @@ const PipluxHome: React.FC = observer(() => {
     const [pnlRange, setPnlRange] = React.useState<PnlRange>('3d');
     const [activeBarIndex, setActiveBarIndex] = React.useState<number | null>(null);
     const [profitTransactions, setProfitTransactions] = React.useState<ProfitTx[]>([]);
-    const [dailyTarget, setDailyTarget] = React.useState<number>(() => loadSavedTarget(loginid, is_virtual));
+    const [dailyTarget, setDailyTarget] = React.useState<number>(() =>
+        loadSavedTarget(effectiveLoginId, effectiveIsVirtual)
+    );
     const [targetInput, setTargetInput] = React.useState<string>(() =>
-        String(loadSavedTarget(loginid, is_virtual))
+        String(loadSavedTarget(effectiveLoginId, effectiveIsVirtual))
     );
     const [targetError, setTargetError] = React.useState<string>('');
 
@@ -261,11 +308,11 @@ const PipluxHome: React.FC = observer(() => {
 
     // Sync saved daily target when switching account/loginid
     React.useEffect(() => {
-        const nextTarget = loadSavedTarget(loginid, is_virtual);
+        const nextTarget = loadSavedTarget(effectiveLoginId, effectiveIsVirtual);
         setDailyTarget(nextTarget);
         setTargetInput(String(nextTarget));
         setTargetError('');
-    }, [loginid, is_virtual]);
+    }, [effectiveLoginId, effectiveIsVirtual]);
 
     // Update UTC clock
     React.useEffect(() => {
@@ -283,10 +330,10 @@ const PipluxHome: React.FC = observer(() => {
 
         const handleScroll = () => {
             const y = scroller.scrollTop;
-            const progress = Math.min(1, y / 136);
+            const progress = Math.min(1, y / 120);
             hero.style.setProperty('--scroll-p', progress.toFixed(3));
             hero.classList.toggle('piplux-home__hero--scrolled', y > 24);
-            const collapsed = y > 96;
+            const collapsed = y > 88;
             [greetingRowRef.current, modeRowRef.current].forEach(el => {
                 if (!el) return;
                 if (collapsed) el.setAttribute('inert', '');
@@ -301,7 +348,7 @@ const PipluxHome: React.FC = observer(() => {
 
     // 1. Fetch User Name + Available Accounts (Demo/Real) from Deriv Servers
     React.useEffect(() => {
-        if (!is_logged_in) return undefined;
+        if (!is_logged_in && !hasStoredSession()) return undefined;
         let cancelled = false;
 
         const loadUserIdentity = async () => {
@@ -356,24 +403,41 @@ const PipluxHome: React.FC = observer(() => {
 
             // 1d. Check active account name from /trading/v1/options/accounts
             if (!resolvedName && fetchedAccounts.length > 0) {
-                const activeAcc = fetchedAccounts.find(a => a.account_id === loginid) || fetchedAccounts[0];
-                if (isUsefulProfileName(activeAcc?.name, loginid)) {
+                const activeAcc =
+                    fetchedAccounts.find(a => a.account_id === effectiveLoginId) || fetchedAccounts[0];
+                if (isUsefulProfileName(activeAcc?.name, effectiveLoginId)) {
                     resolvedName = activeAcc.name.trim();
                 }
             }
 
             // 1e. Final clean fallback: email handle or loginid
             if (!resolvedName) {
-                const mail = email || email_address || fetchedAccounts.find(a => a.account_id === loginid)?.email || '';
+                const mail =
+                    email ||
+                    email_address ||
+                    fetchedAccounts.find(a => a.account_id === effectiveLoginId)?.email ||
+                    '';
                 if (mail && mail.includes('@')) {
                     resolvedName = mail.split('@')[0];
                 } else {
-                    resolvedName = loginid || 'TRADER';
+                    resolvedName = effectiveLoginId || 'TRADER';
                 }
             }
 
             if (!cancelled) {
-                setDisplayName(resolvedName.toUpperCase());
+                const isFallbackOnly = !isUsefulProfileName(resolvedName, effectiveLoginId);
+                if (!is_logged_in && isFallbackOnly) {
+                    return;
+                }
+                const upper = resolvedName.toUpperCase();
+                setDisplayName(upper);
+                if (!isFallbackOnly) {
+                    try {
+                        sessionStorage.setItem(getDisplayNameCacheKey(effectiveLoginId), upper);
+                    } catch {
+                        // Ignore storage failures
+                    }
+                }
             }
         };
 
@@ -381,7 +445,7 @@ const PipluxHome: React.FC = observer(() => {
         return () => {
             cancelled = true;
         };
-    }, [is_logged_in, loginid, email, email_address]);
+    }, [is_logged_in, effectiveLoginId, email, email_address]);
 
     // 2. Fetch Settled Trades from Deriv Servers for Net Daily P&L & Today's Profit Sum
     React.useEffect(() => {
@@ -654,15 +718,27 @@ const PipluxHome: React.FC = observer(() => {
         });
     };
 
-    const handleAccountModeClick = (targetMode: 'demo' | 'live') => {
+    const handleAccountModeClick = async (targetMode: 'demo' | 'live') => {
         if (isSwitchingAccount) return;
-        const currentMode = is_virtual ? 'demo' : 'live';
+        const currentMode = effectiveIsVirtual ? 'demo' : 'live';
         if (currentMode === targetMode) return;
 
+        setIsSwitchingAccount(true);
+        let availableAccounts = accounts;
+        if (availableAccounts.length === 0) {
+            try {
+                availableAccounts = await fetchAccounts();
+                setAccounts(availableAccounts);
+            } catch {
+                // Fall through to validation
+            }
+        }
+
         const desiredType = targetMode === 'demo' ? 'demo' : 'real';
-        const targetAcc = accounts.find(a => a.account_type === desiredType);
+        const targetAcc = availableAccounts.find(a => a.account_type === desiredType);
 
         if (!targetAcc) {
+            setIsSwitchingAccount(false);
             if (targetMode === 'live') {
                 ui.toggleTryRealModal?.(true);
                 notify('No Real account found yet — create one to trade Live.');
@@ -672,9 +748,14 @@ const PipluxHome: React.FC = observer(() => {
             return;
         }
 
-        setIsSwitchingAccount(true);
-        switchAccount(targetAcc.account_id, targetAcc.account_type);
-        window.location.reload();
+        notify(`Switching to ${targetMode === 'demo' ? 'Demo' : 'Live'} account...`);
+        try {
+            await Promise.resolve(switchAccount(targetAcc.account_id, targetAcc.account_type));
+            window.location.reload();
+        } catch {
+            setIsSwitchingAccount(false);
+            notify('Could not switch account — please retry.');
+        }
     };
 
     const saveDailyTarget = (amount: number) => {
@@ -683,7 +764,7 @@ const PipluxHome: React.FC = observer(() => {
         setTargetInput(String(rounded));
         setTargetError('');
         try {
-            localStorage.setItem(getTargetStorageKey(loginid), String(rounded));
+            localStorage.setItem(getTargetStorageKey(effectiveLoginId), String(rounded));
         } catch {
             // Ignore storage errors
         }
@@ -739,16 +820,23 @@ const PipluxHome: React.FC = observer(() => {
         setActiveMarketTab(MARKET_TABS[nextIdx].id);
     };
 
-    const numericBalance = Number(balance ?? 0);
+    const hasLiveBalance = balance !== undefined && balance !== null && String(balance).trim() !== '';
+    const rawBalance =
+        hasLiveBalance && (Boolean(loginid) || Number(balance) !== 0 || storedSnapshot.balance === undefined)
+            ? balance
+            : effectiveLoginId && (!loginid || effectiveLoginId === snapshotLoginId)
+              ? storedSnapshot.balance
+              : undefined;
+    const numericBalance = rawBalance !== undefined && rawBalance !== null && rawBalance !== '' ? Number(rawBalance) : NaN;
     const formattedBalance = Number.isFinite(numericBalance)
-        ? formatCurrencyValue(numericBalance, currency || 'USD')
-        : '$ 0.00';
+        ? formatCurrencyValue(numericBalance, effectiveCurrency)
+        : '$ ••••••';
 
     const maxBarAbs = Math.max(...bars.map(b => Math.abs(b.value)), 1);
     const targetPctRaw = dailyTarget > 0 ? Math.round((todayProfit / dailyTarget) * 100) : 0;
     const remainingToTarget = dailyTarget - todayProfit;
     const targetHit = remainingToTarget <= 0;
-    const todayStr = formatCurrencyValue(todayProfit, currency || 'USD', { signed: todayProfit < 0 }).replace(
+    const todayStr = formatCurrencyValue(todayProfit, effectiveCurrency, { signed: todayProfit < 0 }).replace(
         /\s+/g,
         ''
     );
@@ -774,7 +862,7 @@ const PipluxHome: React.FC = observer(() => {
                         <div>
                             <p className='piplux-home__salutation'>{getGreetingText()}</p>
                             <p className='piplux-home__handle' data-testid='dt_home_username'>
-                                {displayName || loginid || 'PIPLUX'}
+                                {displayName || effectiveLoginId || 'PIPLUX'}
                             </p>
                         </div>
                         <span className='piplux-home__status-pill'>
@@ -838,7 +926,7 @@ const PipluxHome: React.FC = observer(() => {
                                 {hideBalance ? '$ ••••••••' : formattedBalance}
                             </h1>
                             <span className='piplux-home__compact-badge' aria-hidden='true'>
-                                {is_virtual ? 'DEMO' : 'LIVE'}
+                                {effectiveIsVirtual ? 'DEMO' : 'LIVE'}
                             </span>
                         </div>
                     </div>
@@ -848,9 +936,9 @@ const PipluxHome: React.FC = observer(() => {
                             <button
                                 type='button'
                                 className={`piplux-home__mode-pill ${
-                                    is_virtual ? 'piplux-home__mode-pill--active' : ''
+                                    effectiveIsVirtual ? 'piplux-home__mode-pill--active' : ''
                                 }`}
-                                aria-pressed={is_virtual}
+                                aria-pressed={effectiveIsVirtual}
                                 disabled={isSwitchingAccount}
                                 onClick={() => handleAccountModeClick('demo')}
                             >
@@ -859,9 +947,9 @@ const PipluxHome: React.FC = observer(() => {
                             <button
                                 type='button'
                                 className={`piplux-home__mode-pill ${
-                                    !is_virtual ? 'piplux-home__mode-pill--active' : ''
+                                    !effectiveIsVirtual ? 'piplux-home__mode-pill--active' : ''
                                 }`}
-                                aria-pressed={!is_virtual}
+                                aria-pressed={!effectiveIsVirtual}
                                 disabled={isSwitchingAccount}
                                 onClick={() => handleAccountModeClick('live')}
                             >
@@ -892,7 +980,7 @@ const PipluxHome: React.FC = observer(() => {
                                 </div>
                                 <div className='piplux-home__pnl-right'>
                                     <span className='piplux-home__pnl-total'>
-                                        {formatCurrencyValue(windowTotal, currency || 'USD', { signed: true })}
+                                        {formatCurrencyValue(windowTotal, effectiveCurrency, { signed: true })}
                                     </span>
                                     <div className='piplux-home__range-tabs' role='group' aria-label='P&L timeframe'>
                                         {(['3d', '7d', '30d'] as PnlRange[]).map(r => (

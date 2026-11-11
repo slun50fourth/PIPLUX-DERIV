@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import { getHelpCentreUrl, redirectToLogin, redirectToSignUp, routes } from '@deriv/shared';
 import { observer, useStore } from '@deriv/stores';
+import { hasStoredSession } from 'Services/oauth';
 import PipluxHome from './PipluxHome';
 import './LandingPage.scss';
 
@@ -27,7 +28,7 @@ const INITIAL_TICKERS: TickerAsset[] = [
 const LandingPage: React.FC = observer(() => {
   const history = useHistory();
   const { client, common } = useStore();
-  const { is_logged_in } = client;
+  const { is_logged_in, is_logging_in } = client;
 
   // Live Ticker simulation
   const [tickers, setTickers] = useState<TickerAsset[]>(INITIAL_TICKERS);
@@ -181,7 +182,7 @@ const LandingPage: React.FC = observer(() => {
     return null;
   }
 
-  if (is_logged_in) {
+  if (is_logged_in || is_logging_in || hasStoredSession()) {
     return <PipluxHome />;
   }
 

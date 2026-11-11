@@ -8,6 +8,8 @@ import { useDevice } from '@deriv-com/ui';
 
 import { useLocation } from 'react-router-dom';
 
+import { hasStoredSession } from 'Services/oauth';
+
 import ErrorBoundary from './Components/Elements/Errors/error-boundary.jsx';
 import LandscapeBlocker from './Components/Elements/LandscapeBlocker';
 import AppToastMessages from './Containers/app-toast-messages.jsx';
@@ -27,7 +29,8 @@ const AppContent: React.FC<{ passthrough: any }> = observer(({ passthrough }) =>
     const { isMobile } = useDevice();
     const location = useLocation();
     const isLandingPage = location.pathname === '/' || location.pathname === '/landing' || location.pathname === '/landing/';
-    const isHomeHub = isLandingPage && store.client.is_logged_in;
+    const isHomeHub =
+        isLandingPage && (store.client.is_logged_in || store.client.is_logging_in || hasStoredSession());
     const isBotPage = location.pathname === '/bot' || location.pathname.startsWith('/bot/');
 
     const { switchLanguage } = useTranslations();
