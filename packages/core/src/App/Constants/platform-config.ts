@@ -19,7 +19,9 @@ const platform_config: TPlatformConfig[] = [
         // [AI]
         description: () =>
             getPlatformDescription() ||
-            localize('A whole new trading experience on a powerful yet easy to use platform.'),
+            localize(
+                'PIPLUX Trading is an intuitive derivatives platform that empowers traders to navigate global markets effortlessly using smart technical analysis tools and ultra-fast execution infrastructure.'
+            ),
         // [/AI]
         link_to: routes.index,
     },

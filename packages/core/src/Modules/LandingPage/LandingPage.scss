@@ -148,6 +148,35 @@
     border-radius: 4px;
   }
 
+  &__brand-img {
+    height: 46px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    display: block;
+
+    @media (max-width: 768px) {
+      height: 36px;
+    }
+  }
+
+  &__wordmark-img {
+    height: 30px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    display: block;
+    margin-bottom: 14px;
+  }
+
+  &__footer-logo-img {
+    height: 112px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
   &__nav-links {
     display: flex;
     align-items: center;

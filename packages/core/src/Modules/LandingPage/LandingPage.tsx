@@ -197,12 +197,11 @@ const LandingPage: React.FC = observer(() => {
         {/* Navigation Header */}
         <header className="piplux-landing__nav">
           <div className="piplux-landing__brand" onClick={() => history.push(routes.landing)}>
-            <div className="piplux-landing__brand-logo">
-              <span className="piplux-landing__logo-p">P</span>
-              <span className="piplux-landing__logo-slash">/</span>
-              <span className="piplux-landing__logo-l">L</span>
-            </div>
-            <div className="piplux-landing__brand-name">PIPLUX</div>
+            <img
+              src="/brand/logo-horizontal.png"
+              alt="PIPLUX — Turning Pips to Luxury"
+              className="piplux-landing__brand-img"
+            />
           </div>
 
           <div className="piplux-landing__nav-links">
@@ -228,8 +227,8 @@ const LandingPage: React.FC = observer(() => {
           </h1>
 
           <p className="piplux-landing__hero-subtitle piplux-reveal piplux-reveal--fade-up" style={{ transitionDelay: '0.15s' }}>
-            Experience institutional-grade order execution, 24/7 synthetic market access, interactive SmartCharts,
-            and automated trading tools on a platform optimized for seamless user performance.
+            PIPLUX Trading is an intuitive derivatives platform that empowers traders to navigate global markets
+            effortlessly using smart technical analysis tools and ultra-fast execution infrastructure.
           </p>
 
           <div className="piplux-landing__hero-ctas piplux-reveal piplux-reveal--fade-up" style={{ transitionDelay: '0.3s' }}>
@@ -293,34 +292,42 @@ const LandingPage: React.FC = observer(() => {
         {/* Why PIPLUX Features */}
         <section id="features" className="piplux-landing__features-section">
           <h2 className="piplux-landing__section-title piplux-reveal piplux-reveal--fade-up">Engineered for Superior Performance</h2>
-          <p className="piplux-landing__section-subtitle piplux-reveal piplux-reveal--fade-up" style={{ transitionDelay: '0.1s' }}>Everything you need to dominate synthetic indices and financial markets.</p>
+          <p className="piplux-landing__section-subtitle piplux-reveal piplux-reveal--fade-up" style={{ transitionDelay: '0.1s' }}>Built for effortless execution, smart analysis, and high-speed global market access.</p>
 
           <div className="piplux-landing__features-grid">
             <div className="piplux-landing__feature-card piplux-reveal piplux-reveal--fade-up" style={{ transitionDelay: '0.05s' }}>
               <div className="piplux-landing__feature-icon">⚡</div>
-              <h3 className="piplux-landing__feature-title">24/7 Synthetic Indices</h3>
+              <h3 className="piplux-landing__feature-title">Effortless Execution</h3>
               <p className="piplux-landing__feature-desc">
-                Trade proprietary Volatility 75, Crash 1000, Boom 500, and Step Indices 365 days a year without market closures or weekend gaps.
+                A streamlined trading environment built to simplify complex market movements.
               </p>
             </div>
 
             <div className="piplux-landing__feature-card piplux-reveal piplux-reveal--fade-up" style={{ transitionDelay: '0.1s' }}>
               <div className="piplux-landing__feature-icon">📈</div>
-              <h3 className="piplux-landing__feature-title">Advanced SmartCharts</h3>
+              <h3 className="piplux-landing__feature-title">Smart Analysis</h3>
               <p className="piplux-landing__feature-desc">
-                Analyze market trends effortlessly with real-time tick streaming, multi-timeframe controls, and technical indicators optimized for all traders.
+                Integrated technical analysis tools that help traders make confident, data-driven decisions.
               </p>
             </div>
 
             <div className="piplux-landing__feature-card piplux-reveal piplux-reveal--fade-up" style={{ transitionDelay: '0.15s' }}>
-              <div className="piplux-landing__feature-icon">🤖</div>
-              <h3 className="piplux-landing__feature-title">Automated Trading &amp; Bots</h3>
+              <div className="piplux-landing__feature-icon">🏛️</div>
+              <h3 className="piplux-landing__feature-title">Powerful Infrastructure</h3>
               <p className="piplux-landing__feature-desc">
-                Deploy automated trading strategies seamlessly using Deriv Bot and MetaTrader 5 (MT5) integration.
+                Backed by reliable Deriv technology to deliver high-speed trading across Forex, synthetic indices, and multi-asset portfolios.
               </p>
             </div>
 
             <div className="piplux-landing__feature-card piplux-reveal piplux-reveal--fade-up" style={{ transitionDelay: '0.2s' }}>
+              <div className="piplux-landing__feature-icon">🤖</div>
+              <h3 className="piplux-landing__feature-title">Automated Trading &amp; Bots</h3>
+              <p className="piplux-landing__feature-desc">
+                Deploy automated trading strategies seamlessly using PIPLUX Bot Builder and MetaTrader 5 (MT5) integration.
+              </p>
+            </div>
+
+            <div className="piplux-landing__feature-card piplux-reveal piplux-reveal--fade-up" style={{ transitionDelay: '0.25s' }}>
               <div className="piplux-landing__feature-icon">💎</div>
               <h3 className="piplux-landing__feature-title">Instant Funding &amp; Payouts</h3>
               <p className="piplux-landing__feature-desc">
@@ -328,19 +335,11 @@ const LandingPage: React.FC = observer(() => {
               </p>
             </div>
 
-            <div className="piplux-landing__feature-card piplux-reveal piplux-reveal--fade-up" style={{ transitionDelay: '0.25s' }}>
+            <div className="piplux-landing__feature-card piplux-reveal piplux-reveal--fade-up" style={{ transitionDelay: '0.3s' }}>
               <div className="piplux-landing__feature-icon">🛡️</div>
               <h3 className="piplux-landing__feature-title">Negative Balance Protection</h3>
               <p className="piplux-landing__feature-desc">
                 Trade with confidence knowing your maximum risk is limited to your account balance, protecting you from extreme market spikes.
-              </p>
-            </div>
-
-            <div className="piplux-landing__feature-card piplux-reveal piplux-reveal--fade-up" style={{ transitionDelay: '0.3s' }}>
-              <div className="piplux-landing__feature-icon">📱</div>
-              <h3 className="piplux-landing__feature-title">Multi-Device WebTrader</h3>
-              <p className="piplux-landing__feature-desc">
-                Access your trading hub from any browser, smartphone, or tablet with lightning fast SmartCharts integration.
               </p>
             </div>
           </div>
@@ -350,14 +349,19 @@ const LandingPage: React.FC = observer(() => {
         <section className="piplux-landing__platforms-section">
           <div className="piplux-landing__platform-box piplux-reveal piplux-reveal--fade-up">
             <div className="piplux-landing__platform-info">
-              <h3>PIPLUX Multi-Asset Platform</h3>
+              <img
+                src="/brand/logo-wording.png"
+                alt="PIPLUX — Turning Pips to Luxury"
+                className="piplux-landing__wordmark-img"
+              />
+              <h3>About PIPLUX Trading</h3>
               <p>
-                Whether you prefer high-frequency synthetic volatility trading, automated drag-and-drop bots, or traditional MT5 charting, PIPLUX provides a unified ecosystem.
+                PIPLUX Trading (pipluxtrade.com) is an advanced online derivatives platform designed to make market navigation effortless. Powered by robust Deriv technology, PIPLUX equips traders with smart technical analysis tools to seamlessly execute strategies across Forex, ultra-fast synthetic indices, and global multi-asset markets.
               </p>
               <ul className="piplux-landing__platform-list">
-                <li><span>✓</span> Deriv WebTrader &amp; SmartCharts</li>
+                <li><span>✓</span> PIPLUX WebTrader &amp; SmartCharts</li>
                 <li><span>✓</span> MetaTrader 5 (MT5) Standard &amp; Financial</li>
-                <li><span>✓</span> Deriv Bot Strategy Builder</li>
+                <li><span>✓</span> PIPLUX Bot Strategy Builder</li>
                 <li><span>✓</span> Deriv X Custom Interface</li>
               </ul>
               <button className="piplux-landing__btn-gold" onClick={handleGoToTrade}>
@@ -566,7 +570,7 @@ const LandingPage: React.FC = observer(() => {
         {/* FAQ Section */}
         <section id="faq" className="piplux-landing__faq-section">
           <h2 className="piplux-landing__section-title">Frequently Asked Questions</h2>
-          <p className="piplux-landing__section-subtitle">Everything you need to know about trading on PIPLUX Deriv Whitelabel.</p>
+          <p className="piplux-landing__section-subtitle">Everything you need to know about trading on PIPLUX (pipluxtrade.com).</p>
 
           <div className="piplux-landing__faq-container piplux-reveal piplux-reveal--fade-up">
             {[
@@ -609,16 +613,15 @@ const LandingPage: React.FC = observer(() => {
         <footer className="piplux-landing__footer">
           <div className="piplux-landing__footer-grid">
             <div className="piplux-landing__footer-about">
-              <div className="piplux-landing__brand">
-                <div className="piplux-landing__brand-logo">
-                  <span className="piplux-landing__logo-p">P</span>
-                  <span className="piplux-landing__logo-slash">/</span>
-                  <span className="piplux-landing__logo-l">L</span>
-                </div>
-                <div className="piplux-landing__brand-name">PIPLUX</div>
+              <div className="piplux-landing__brand" onClick={() => history.push(routes.landing)}>
+                <img
+                  src="/brand/logo-stacked.png"
+                  alt="PIPLUX — Turning Pips to Luxury"
+                  className="piplux-landing__footer-logo-img"
+                />
               </div>
               <p>
-                PIPLUX is an official white-label derivatives platform powered by Deriv technology, delivering ultra-fast synthetic indices, Forex, and multi-asset trading solutions worldwide.
+                PIPLUX Trading (pipluxtrade.com) is an advanced online derivatives platform designed to make market navigation effortless. Powered by robust Deriv technology, PIPLUX equips traders with smart technical analysis tools to seamlessly execute strategies across Forex, ultra-fast synthetic indices, and global multi-asset markets.
               </p>
             </div>
 
@@ -659,7 +662,7 @@ const LandingPage: React.FC = observer(() => {
               The financial products offered carry a high level of risk and can result in the loss of all your funds. 
               You should never invest money that you cannot afford to lose.
             </p>
-            <p>&copy; {new Date().getFullYear()} PIPLUX TRADING HUB. All Rights Reserved. Powered by Deriv Whitelabel Infrastructure.</p>
+            <p>&copy; {new Date().getFullYear()} PIPLUX Trading (pipluxtrade.com). All Rights Reserved. Powered by Deriv Technology.</p>
           </div>
         </footer>
       </div>

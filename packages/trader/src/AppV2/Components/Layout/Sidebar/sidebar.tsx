@@ -305,7 +305,7 @@ const Sidebar = observer(() => {
                         alt={getBrandName()}
                         width={32}
                         height={32}
-                        data-testid='dt_sidebar_brand_logo'
+                        style={{ width: '36px', height: '36px', borderRadius: '7px', objectFit: 'contain', border: '1px solid rgba(212, 175, 55, 0.35)' }} data-testid='dt_sidebar_brand_logo'
                     />
                     {/* [/AI] */}
                 </div>

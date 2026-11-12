@@ -13,7 +13,16 @@ type TBrandLogoProps = {
 const BrandLogo = observer(({ className, width, height }: TBrandLogoProps) => {
     const { ui } = useStore();
     const src = ui.is_dark_mode_on ? getBrandLogoDark() : getBrandLogo();
-    return <img src={`/${src}`} alt={getBrandName()} className={className} width={width} height={height} />;
+    return (
+        <img
+            src={`/${src}`}
+            alt={getBrandName()}
+            className={className}
+            width={width}
+            height={height}
+            style={{ objectFit: 'contain', borderRadius: '6px' }}
+        />
+    );
 });
 
 BrandLogo.displayName = 'BrandLogo';

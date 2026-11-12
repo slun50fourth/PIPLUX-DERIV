@@ -101,10 +101,12 @@ describe('HeaderLegacy', () => {
             (useDevice as jest.Mock).mockReturnValue({ isDesktop: true, isMobile: false });
         });
 
-        it('should not render DTrader logo on desktop', () => {
+        it('should render horizontal brand logo on desktop', () => {
             renderComponent();
 
-            expect(screen.queryByTestId('dt_dtrader_logo')).not.toBeInTheDocument();
+            const logo = screen.getByTestId('dt_header_brand_logo');
+            expect(logo).toBeInTheDocument();
+            expect(logo).toHaveAttribute('src', '/brand/logo-horizontal.png');
         });
     });
 
@@ -113,10 +115,12 @@ describe('HeaderLegacy', () => {
             (useDevice as jest.Mock).mockReturnValue({ isDesktop: false, isMobile: true });
         });
 
-        it('should render DTrader logo on mobile', () => {
+        it('should render compact brand icon logo on mobile', () => {
             renderComponent();
 
-            expect(screen.getByTestId('dt_dtrader_logo')).toBeInTheDocument();
+            const logo = screen.getByTestId('dt_header_brand_logo');
+            expect(logo).toBeInTheDocument();
+            expect(logo).toHaveAttribute('src', '/brand/platform-logo.png');
         });
     });
 

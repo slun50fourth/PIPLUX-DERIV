@@ -84,7 +84,7 @@ const rules = (is_test_env = false) => [
     },
     {
         test: /\.html$/,
-        exclude: /node_modules/,
+        exclude: /node_modules|index\.html$/,
         use: html_loaders,
     },
     {

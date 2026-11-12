@@ -1,12 +1,16 @@
 import { ReactNode } from 'react';
 import { standalone_routes } from '@/components/shared';
 import { LegacyHomeNewIcon as TradershubLogo } from '@deriv/quill-icons/Legacy';
-import {
-    DerivProductBrandLightDerivBotLogoWordmarkIcon as DerivBotLogo,
-    DerivProductBrandLightDerivTraderLogoWordmarkIcon as DerivTraderLogo,
-    PartnersProductBrandLightSmarttraderLogoWordmarkIcon as SmarttraderLogo,
-} from '@deriv/quill-icons/Logo';
 import { localize } from '@deriv-com/translations';
+
+const PipluxWordmark = ({ height }: { height: number }) => (
+    <img
+        src='/deriv-bot/brand-logo-horizontal.png'
+        alt='PIPLUX'
+        height={height}
+        style={{ height: `${height}px`, width: 'auto', objectFit: 'contain', display: 'block' }}
+    />
+);
 
 export type PlatformsConfig = {
     active: boolean;
@@ -39,26 +43,28 @@ export type TAccount = {
 export const platformsConfig: PlatformsConfig[] = [
     {
         active: false,
-        buttonIcon: <DerivTraderLogo height={25} width={114.97} />,
-        description: localize('A whole new trading experience on a powerful yet easy to use platform.'),
+        buttonIcon: <PipluxWordmark height={25} />,
+        description: localize(
+            'PIPLUX Trading is an intuitive derivatives platform that empowers traders to navigate global markets effortlessly using smart technical analysis tools and ultra-fast execution infrastructure.'
+        ),
         href: standalone_routes.trade,
-        icon: <DerivTraderLogo height={32} width={148} />,
+        icon: <PipluxWordmark height={32} />,
         showInEU: true,
     },
     {
         active: true,
-        buttonIcon: <DerivBotLogo height={25} width={94} />,
+        buttonIcon: <PipluxWordmark height={25} />,
         description: localize('Automated trading at your fingertips. No coding needed.'),
         href: standalone_routes.bot,
-        icon: <DerivBotLogo height={32} width={121} />,
+        icon: <PipluxWordmark height={32} />,
         showInEU: false,
     },
     {
         active: false,
-        buttonIcon: <SmarttraderLogo height={24} width={115} />,
+        buttonIcon: <PipluxWordmark height={24} />,
         description: localize('Trade the world’s markets with our popular user-friendly platform.'),
         href: standalone_routes.smarttrader,
-        icon: <SmarttraderLogo height={32} width={153} />,
+        icon: <PipluxWordmark height={32} />,
         showInEU: false,
     },
 ];

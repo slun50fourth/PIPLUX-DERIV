@@ -37,12 +37,33 @@ const HeaderLegacy = observer(() => {
             })}
         >
             <div className='header__menu-items'>
-                <div className='header__logo' onClick={() => history.push(routes.landing)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', paddingLeft: '8px' }}>
-                    <div style={{ width: '32px', height: '32px', fontSize: '15px', background: 'linear-gradient(135deg, #ffd700 0%, #b8860b 100%)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#000', fontFamily: 'Ubuntu, sans-serif' }}>
-                        <span>P</span>
-                        <span style={{ margin: '0 1px', opacity: 0.7 }}>/</span>
-                        <span>L</span>
-                    </div>
+                <div
+                    className='header__logo'
+                    onClick={() => history.push(routes.landing)}
+                    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', paddingLeft: '8px' }}
+                >
+                    <img
+                        src={isMobile ? '/brand/platform-logo.png' : '/brand/logo-horizontal.png'}
+                        alt='PIPLUX'
+                        data-testid='dt_header_brand_logo'
+                        style={
+                            isMobile
+                                ? {
+                                      width: '34px',
+                                      height: '34px',
+                                      borderRadius: '7px',
+                                      border: '1px solid rgba(212, 175, 55, 0.35)',
+                                      objectFit: 'contain',
+                                      display: 'block',
+                                  }
+                                : {
+                                      height: '34px',
+                                      width: 'auto',
+                                      objectFit: 'contain',
+                                      display: 'block',
+                                  }
+                        }
+                    />
                 </div>
                 {is_logging_in ? (
                     <div id='dt_core_header_acc-info-preloader' className='acc-info__preloader'>
