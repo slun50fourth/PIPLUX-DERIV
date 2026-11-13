@@ -658,8 +658,7 @@ describe('AccountHeader', () => {
                 await userEvent.click(transferButton);
 
                 // Since mockSendBridgeEvent executes the fallback, window.location should be set
-                expect(window.location.href).toContain('/transfer');
-                expect(window.location.href).toContain('curr=USD');
+                expect(window.location.href).toBe('https://home.deriv.com/dashboard/portfolio');
             });
 
             it('should not call sendBridgeEvent for Try real button (should open modal instead)', async () => {

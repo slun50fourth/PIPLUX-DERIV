@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { useMobileBridge } from '@deriv/api';
-import { getBrandUrl, isEmptyObject, mapErrorMessage, redirectToLogin, redirectToSignUp } from '@deriv/shared';
+import { getDepositUrl, isEmptyObject, mapErrorMessage, redirectToLogin, redirectToSignUp } from '@deriv/shared';
 import { observer, useStore } from '@deriv/stores';
 import { ActionSheet, Modal, Text } from '@deriv-com/quill-ui';
 import { Localize } from '@deriv-com/translations';
@@ -15,7 +15,7 @@ const ServiceErrorSheet = observer(() => {
     const [is_open, setIsOpen] = useState(false);
     const { common, client, ui } = useStore();
     const { is_mobile } = ui;
-    const { is_virtual, currency } = client;
+    const { is_virtual } = client;
     const { services_error, resetServicesError, current_language } = common;
     const { clearPurchaseInfo, requestProposal: resetPurchase } = useTraderStore();
     const { sendBridgeEvent } = useMobileBridge();
@@ -58,10 +58,8 @@ const ServiceErrorSheet = observer(() => {
                     content: <Localize i18n_default_text='Deposit now' />,
                     onAction: () => {
                         resetServicesError();
-                        const brandUrl = getBrandUrl();
-                        const lang_param = current_language ? `&lang=${current_language}` : '';
                         sendBridgeEvent('trading:transfer', () => {
-                            window.location.href = `${brandUrl}/transfer?from=dtrader&source=options&acc=options&curr=${currency}${lang_param}`;
+                            window.location.href = getDepositUrl();
                         });
                     },
                 },

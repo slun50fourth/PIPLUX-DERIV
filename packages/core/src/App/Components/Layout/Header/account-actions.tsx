@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 
 import { useDerivativesAccount, useMobileBridge } from '@deriv/api';
 import { Button, Skeleton, Text } from '@deriv/components';
-import { getBrandUrl, getSignupUrl } from '@deriv/shared';
+import { getDepositUrl, getSignupUrl } from '@deriv/shared';
 import { useStore } from '@deriv/stores';
 import { useTranslations } from '@deriv-com/translations';
 
@@ -18,8 +18,8 @@ const AccountInfo = React.lazy(
 );
 
 const AccountActionsComponent = observer(() => {
-    const { client, common, ui } = useStore();
-    const { currency, is_logged_in, loginid } = client;
+    const { client, ui } = useStore();
+    const { is_logged_in, loginid } = client;
     const { is_switching_account, setIsSwitchingAccount } = ui;
 
     const { localize } = useTranslations();
@@ -55,10 +55,8 @@ const AccountActionsComponent = observer(() => {
             ui.toggleTryRealModal(true);
         } else {
             // Deposit button (for both account types or real-only accounts)
-            const brandUrl = getBrandUrl();
-            const lang_param = common.current_language ? `&lang=${common.current_language}` : '';
             sendBridgeEvent('trading:transfer', () => {
-                window.location.href = `${brandUrl}/transfer?from=dtrader&source=options&acc=options&curr=${currency}${lang_param}`;
+                window.location.href = getDepositUrl();
             });
         }
     };

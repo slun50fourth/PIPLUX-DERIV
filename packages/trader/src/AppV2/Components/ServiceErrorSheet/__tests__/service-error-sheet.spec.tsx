@@ -20,7 +20,7 @@ jest.mock('@deriv/shared', () => ({
     ...jest.requireActual('@deriv/shared'),
     redirectToLogin: jest.fn(),
     redirectToSignUp: jest.fn(),
-    getBrandUrl: jest.fn(() => 'https://home.deriv.com/dashboard'),
+    getDepositUrl: jest.fn(() => 'https://home.deriv.com/dashboard/portfolio'),
 }));
 
 // Mock useMobileBridge hook
@@ -114,10 +114,8 @@ describe('ServiceErrorSheet', () => {
         const depositButton = screen.getByText(/Deposit now/i);
         await userEvent.click(depositButton);
 
-        expect(fileUtils.getBrandUrl).toHaveBeenCalled();
-        expect(window.location.href).toBe(
-            'https://home.deriv.com/dashboard/transfer?from=dtrader&source=options&acc=options&curr=USD&lang=EN'
-        );
+        expect(fileUtils.getDepositUrl).toHaveBeenCalled();
+        expect(window.location.href).toBe('https://home.deriv.com/dashboard/portfolio');
         expect(default_mock_store.common.resetServicesError).toHaveBeenCalled();
     });
 
@@ -163,8 +161,7 @@ describe('ServiceErrorSheet', () => {
             await userEvent.click(depositButton);
 
             // Since mockSendBridgeEvent executes the fallback, window.location should be set
-            expect(window.location.href).toContain('home.deriv.com/dashboard/transfer');
-            expect(window.location.href).toContain('curr=USD');
+            expect(window.location.href).toBe('https://home.deriv.com/dashboard/portfolio');
         });
     });
 });

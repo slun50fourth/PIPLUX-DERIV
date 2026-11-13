@@ -3,7 +3,7 @@ import { RouteComponentProps, withRouter } from 'react-router-dom';
 
 import { useMobileBridge } from '@deriv/api';
 import { Button, Modal } from '@deriv/components';
-import { getBrandUrl } from '@deriv/shared';
+import { getDepositUrl } from '@deriv/shared';
 import { observer, useStore } from '@deriv/stores';
 import { useTranslations } from '@deriv-com/translations';
 
@@ -18,18 +18,14 @@ const InsufficientBalanceModal = observer(
     ({ is_virtual, is_visible, message, toggleModal }: TInsufficientBalanceModal) => {
         const {
             ui: { is_mobile },
-            client: { currency },
-            common: { current_language },
         } = useStore();
         const { localize } = useTranslations();
         const { sendBridgeEvent } = useMobileBridge();
 
         const handleTransferClick = () => {
             if (!is_virtual) {
-                const brandUrl = getBrandUrl();
-                const lang_param = current_language ? `&lang=${current_language}` : '';
                 sendBridgeEvent('trading:transfer', () => {
-                    window.location.href = `${brandUrl}/transfer?from=dtrader&source=options&acc=options&curr=${currency}${lang_param}`;
+                    window.location.href = getDepositUrl();
                 });
             } else {
                 toggleModal();

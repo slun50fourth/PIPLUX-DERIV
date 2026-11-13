@@ -19,8 +19,8 @@
         "staging": "https://partner-tracking.deriv.com/click?a=19593&o=1&c=3&link_id=1"
     },
     "deposit_url": {
-        "staging": "https://staging.pipluxtrade.com/transfer",
-        "production": "https://pipluxtrade.com/transfer"
+        "staging": "https://home.deriv.com/dashboard/portfolio",
+        "production": "https://home.deriv.com/dashboard/portfolio"
     },
     "auth": {
         "staging": "https://staging-auth.deriv.com",

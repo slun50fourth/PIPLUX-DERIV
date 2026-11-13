@@ -90,7 +90,7 @@ window.Blockly.Blocks.last_digits_condition = {
 };
 
 const lastDigitsGenerator = block => {
-    const js = window.Blockly.JavaScript;
+    const js = window.Blockly.JavaScript.javascriptGenerator || window.Blockly.JavaScript;
     const n = js.valueToCode(block, 'N', js.ORDER_ATOMIC) || '1';
     const cond = block.getFieldValue('CONDITION') || 'LESS_OR_EQUAL';
     const cmp = js.valueToCode(block, 'COMPARE_VALUE', js.ORDER_ATOMIC) || '0';
@@ -139,7 +139,7 @@ window.Blockly.Blocks.even_odd_analysis = {
 };
 
 const evenOddGenerator = block => {
-    const js = window.Blockly.JavaScript;
+    const js = window.Blockly.JavaScript.javascriptGenerator || window.Blockly.JavaScript;
     const type = block.getFieldValue('ANALYSIS_TYPE') || 'EVEN_PERCENTAGE';
     const n = js.valueToCode(block, 'N', js.ORDER_ATOMIC) || '1000';
     const isEven = type === 'EVEN_PERCENTAGE';

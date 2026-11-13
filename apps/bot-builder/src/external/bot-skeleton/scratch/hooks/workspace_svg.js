@@ -355,8 +355,11 @@ window.Blockly.WorkspaceSvg.prototype.asyncClear = function () {
     setLoading(true);
 
     return new Promise(resolve => {
-        this.clear();
-        setLoading(false);
-        resolve();
+        try {
+            this.clear();
+        } finally {
+            setLoading(false);
+            resolve();
+        }
     });
 };

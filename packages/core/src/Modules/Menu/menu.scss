@@ -3,8 +3,14 @@
     position: relative;
     width: 100%;
     height: 100%;
-    overflow: hidden;
+    min-height: calc(100vh - 5.6rem);
+    overflow-x: hidden;
     background-color: var(--color-surface-primary);
+
+    @media (min-width: 769px) {
+        padding-block-start: 1.6rem;
+        padding-block-end: 8rem;
+    }
 
     &__header {
         display: flex;
@@ -30,6 +36,14 @@
         flex-direction: column;
         transform: translateX(0);
         transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+
+        @media (min-width: 769px) {
+            position: relative;
+            inset: auto;
+            width: 100%;
+            max-width: 64rem;
+            margin-inline: auto;
+        }
 
         &--hidden {
             transform: translateX(-100%);

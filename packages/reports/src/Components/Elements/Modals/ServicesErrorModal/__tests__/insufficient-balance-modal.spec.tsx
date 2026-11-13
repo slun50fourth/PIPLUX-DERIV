@@ -9,10 +9,10 @@ import userEvent from '@testing-library/user-event';
 
 import InsufficientBalanceModal from '../insufficient-balance-modal';
 
-// Mock getBrandUrl function
+// Mock getDepositUrl function
 jest.mock('@deriv/shared', () => ({
     ...jest.requireActual('@deriv/shared'),
-    getBrandUrl: jest.fn(() => 'https://home.deriv.com/dashboard'),
+    getDepositUrl: jest.fn(() => 'https://home.deriv.com/dashboard/portfolio'),
 }));
 
 // Mock useMobileBridge hook
@@ -137,9 +137,7 @@ describe('<InsufficientBalanceModal />', () => {
 
         await userEvent.click(button);
 
-        expect(window.location.href).toBe(
-            'https://home.deriv.com/dashboard/transfer?from=dtrader&source=options&acc=options&curr=USD&lang=EN'
-        );
+        expect(window.location.href).toBe('https://home.deriv.com/dashboard/portfolio');
     });
 
     describe('Bridge events', () => {
@@ -179,8 +177,7 @@ describe('<InsufficientBalanceModal />', () => {
             await userEvent.click(button);
 
             // Since mockSendBridgeEvent executes the fallback, window.location should be set
-            expect(window.location.href).toContain('home.deriv.com/dashboard/transfer');
-            expect(window.location.href).toContain('curr=USD');
+            expect(window.location.href).toBe('https://home.deriv.com/dashboard/portfolio');
         });
     });
 });

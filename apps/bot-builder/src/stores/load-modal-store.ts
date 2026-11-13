@@ -513,30 +513,38 @@ export default class LoadModalStore {
 
     loadStrategyOnModalRecentPreview = async workspace_id => {
         this.setOpenButtonDisabled(true);
-        if (this.recent_strategies.length === 0 || this.tab_name !== tabs_title.TAB_RECENT) return;
-
         const { blockly_store } = this.root_store;
         const { setLoading } = blockly_store;
-
-        const inject_options = { ...inject_workspace_options, theme: window?.Blockly?.Themes?.zelos_renderer };
-
-        this.setLoadedLocalFile(null);
-        this.setSelectedStrategyId(workspace_id);
-
-        await waitForDomElement('#load-strategy__blockly-container');
-        const ref_preview = document.getElementById('load-strategy__blockly-container');
-
-        if (ref_preview) {
-            if (!this.recent_workspace) this.recent_workspace = window.Blockly.inject(ref_preview, inject_options);
-            (this.recent_workspace as any).RTL = isDbotRTL();
-
-            const convertedDom = window.Blockly?.utils?.xml?.textToDom(this.selected_strategy?.xml);
-            const mainWorkspace = window.Blockly?.getMainWorkspace();
-
-            window.Blockly?.Xml?.clearWorkspaceAndLoadFromXml(convertedDom, mainWorkspace);
+        if (this.recent_strategies.length === 0 || this.tab_name !== tabs_title.TAB_RECENT) {
+            setLoading(false);
+            return;
         }
-        setLoading(false);
-        this.setOpenButtonDisabled(false);
+
+        try {
+            const inject_options = { ...inject_workspace_options, theme: window?.Blockly?.Themes?.zelos_renderer };
+
+            this.setLoadedLocalFile(null);
+            this.setSelectedStrategyId(workspace_id);
+
+            await waitForDomElement('#load-strategy__blockly-container');
+            const ref_preview = document.getElementById('load-strategy__blockly-container');
+
+            if (ref_preview) {
+                if (!this.recent_workspace) this.recent_workspace = window.Blockly.inject(ref_preview, inject_options);
+                (this.recent_workspace as any).RTL = isDbotRTL();
+
+                const convertedDom = window.Blockly?.utils?.xml?.textToDom(this.selected_strategy?.xml);
+                const mainWorkspace = window.Blockly?.getMainWorkspace();
+
+                window.Blockly?.Xml?.clearWorkspaceAndLoadFromXml(convertedDom, mainWorkspace);
+            }
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.warn('[LoadModal] Failed to preview recent workspace:', error);
+        } finally {
+            setLoading(false);
+            this.setOpenButtonDisabled(false);
+        }
     };
 
     loadStrategyOnModalLocalPreview = async load_options => {

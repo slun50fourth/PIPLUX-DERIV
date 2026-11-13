@@ -32,6 +32,7 @@ const AppContent: React.FC<{ passthrough: any }> = observer(({ passthrough }) =>
     const isHomeHub =
         isLandingPage && (store.client.is_logged_in || store.client.is_logging_in || hasStoredSession());
     const isBotPage = location.pathname === '/bot' || location.pathname.startsWith('/bot/');
+    const isMenuPage = location.pathname === '/menu' || location.pathname.startsWith('/menu/');
 
     const { switchLanguage } = useTranslations();
     const { isBridgeAvailable, sendBridgeEvent } = useMobileBridge();
@@ -70,7 +71,7 @@ const AppContent: React.FC<{ passthrough: any }> = observer(({ passthrough }) =>
     return (
         <ThemeProvider theme={is_dark_mode_on ? 'dark' : 'light'}>
             <LandscapeBlocker />
-            {!isHomeHub && (isMobile || isBotPage) && <Header />}
+            {!isHomeHub && (isMobile || isBotPage || isMenuPage) && <Header />}
             <ErrorBoundary root_store={store}>
                 {isHomeHub ? (
                     <Routes {...({ passthrough } as any)} />
@@ -80,7 +81,7 @@ const AppContent: React.FC<{ passthrough: any }> = observer(({ passthrough }) =>
                     </AppContents>
                 )}
             </ErrorBoundary>
-            {(isMobile || isBotPage || isHomeHub) && <BottomNav />}
+            {(isMobile || isBotPage || isHomeHub || isMenuPage) && <BottomNav />}
             <ErrorBoundary root_store={store}>
                 <AppModals />
             </ErrorBoundary>

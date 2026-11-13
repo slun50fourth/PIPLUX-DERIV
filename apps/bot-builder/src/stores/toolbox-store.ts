@@ -94,6 +94,7 @@ export default class ToolboxStore {
 
     setWorkspaceOptions() {
         const workspace = window.Blockly.derivWorkspace;
+        if (!workspace?.options) return;
         const readOnly = !!workspace.options.readOnly;
         let languageTree, hasCategories, hasCollapse, hasComments, hasDisable;
 
@@ -144,6 +145,11 @@ export default class ToolboxStore {
 
             setTimeout(() => {
                 const workspace = window.Blockly.derivWorkspace;
+                if (!workspace) {
+                    this.is_workspace_scroll_adjusted = false;
+                    this.is_adjusting_workspace = false;
+                    return;
+                }
                 const toolbox_width = document.getElementById('gtm-toolbox')?.getBoundingClientRect().width || 0;
                 const block_canvas_rect = workspace.svgBlockCanvas_?.getBoundingClientRect(); // eslint-disable-line
 

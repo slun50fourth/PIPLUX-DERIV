@@ -124,18 +124,21 @@ class DBot {
                 let workspaceScale = 0.7;
 
                 const { handleFileChange } = DBotStore.instance;
+                const el_scratch_div = document.getElementById('scratch_div');
+                if (!el_scratch_div) {
+                    resolve();
+                    return;
+                }
                 if (window_width < 1640) {
                     if (is_mobile) {
                         workspaceScale = 0.6;
                     } else {
-                        const scratch_div_width = document.getElementById('scratch_div')?.offsetWidth;
-                        const zoom_scale = scratch_div_width / window_width / 1.5;
-                        workspaceScale = zoom_scale;
+                        const scratch_div_width = el_scratch_div.offsetWidth;
+                        if (scratch_div_width > 0 && window_width > 0) {
+                            const zoom_scale = scratch_div_width / window_width / 1.5;
+                            workspaceScale = Math.max(0.35, Math.min(1.5, zoom_scale));
+                        }
                     }
-                }
-                const el_scratch_div = document.getElementById('scratch_div');
-                if (!el_scratch_div) {
-                    return;
                 }
 
                 this.workspace = window.Blockly.inject(el_scratch_div, {
@@ -195,10 +198,19 @@ class DBot {
 
                 const event_group = `dbot-load${Date.now()}`;
                 window.Blockly.Events.setGroup(event_group);
-                window.Blockly.Xml.domToWorkspace(
-                    window.Blockly.utils.xml.textToDom(window.Blockly.derivWorkspace.strategy_to_load),
-                    this.workspace
-                );
+                try {
+                    window.Blockly.Xml.domToWorkspace(
+                        window.Blockly.utils.xml.textToDom(window.Blockly.derivWorkspace.strategy_to_load),
+                        this.workspace
+                    );
+                } catch (xml_err) {
+                    console.warn('[DBot] Failed to load recent strategy XML, falling back to default workspace:', xml_err);
+                    this.workspace.clear();
+                    file_name = config().default_file_name;
+                    window.Blockly.derivWorkspace.strategy_to_load = main_xml;
+                    window.Blockly.getMainWorkspace().strategy_to_load = main_xml;
+                    window.Blockly.Xml.domToWorkspace(window.Blockly.utils.xml.textToDom(main_xml), this.workspace);
+                }
                 const { save_modal } = DBotStore.instance;
 
                 save_modal.updateBotName(file_name);

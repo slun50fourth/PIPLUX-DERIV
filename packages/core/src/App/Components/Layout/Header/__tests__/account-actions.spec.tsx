@@ -9,7 +9,7 @@ import { AccountActions } from '../account-actions';
 // Mock dependencies
 jest.mock('@deriv/shared', () => ({
     ...jest.requireActual('@deriv/shared'),
-    getBrandUrl: jest.fn(() => 'https://deriv.com'),
+    getDepositUrl: jest.fn(() => 'https://home.deriv.com/dashboard/portfolio'),
     getSignupUrl: jest.fn(() => ''),
 }));
 
@@ -193,8 +193,7 @@ describe('AccountActions component', () => {
         const deposit_button = screen.getByRole('button', { name: /deposit/i });
         await userEvent.click(deposit_button);
 
-        expect(window.location.href).toContain('deriv.com/transfer');
-        expect(window.location.href).toContain('curr=USD');
+        expect(window.location.href).toBe('https://home.deriv.com/dashboard/portfolio');
     });
 
     it('should handle "Try real" button click for demo-only accounts and open modal', async () => {
@@ -250,8 +249,7 @@ describe('AccountActions component', () => {
             await userEvent.click(deposit_button);
 
             // Since mockSendBridgeEvent executes the fallback, window.location should be set
-            expect(window.location.href).toContain('deriv.com/transfer');
-            expect(window.location.href).toContain('curr=USD');
+            expect(window.location.href).toBe('https://home.deriv.com/dashboard/portfolio');
         });
 
         it('should not call sendBridgeEvent for Try real button (should open modal instead)', async () => {

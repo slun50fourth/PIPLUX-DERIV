@@ -77,13 +77,14 @@ describe('MenuPage', () => {
             </StoreProvider>
         );
 
-    describe('Non-mobile redirect', () => {
-        it('should not render menu content on desktop', () => {
+    describe('Desktop rendering', () => {
+        it('should render menu content on desktop just as on mobile', () => {
             (useDevice as jest.Mock).mockReturnValue({ isMobile: false, isDesktop: true });
             renderMenuPage();
 
-            expect(screen.queryByText('Reports')).not.toBeInTheDocument();
-            expect(screen.queryByText('Settings')).not.toBeInTheDocument();
+            expect(screen.getByText('Reports')).toBeInTheDocument();
+            expect(screen.getByText('Bot Builder (Blockly)')).toBeInTheDocument();
+            expect(screen.getByText('Settings')).toBeInTheDocument();
         });
     });
 
