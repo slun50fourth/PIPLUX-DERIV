@@ -128,17 +128,108 @@
         }
     }
 
+    &__bots-tab-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    &__bots-tab-dot {
+        inline-size: 0.55rem;
+        block-size: 0.55rem;
+        border-radius: 50%;
+        background: #f2ca00;
+        box-shadow: 0 0 6px rgba(242, 202, 0, 0.85);
+        flex-shrink: 0;
+    }
+
     &__content {
         display: flex;
         justify-content: space-between;
         flex-direction: column;
         overflow: hidden !important;
 
+        &:has(.bots-panel) {
+            .dc-tabs {
+                flex: 1 1 auto;
+                min-block-size: 0;
+                block-size: 100%;
+
+                &__content {
+                    min-block-size: 0;
+                    block-size: 100%;
+                    overflow: hidden;
+                }
+            }
+        }
+
         .dc-tabs {
+            &__list {
+                display: flex;
+                justify-content: space-between;
+                overflow-x: auto;
+                scrollbar-width: none;
+
+                &--border-bottom {
+                    border-block-end: 1px solid rgba(255, 255, 255, 0.12);
+                }
+
+                &::-webkit-scrollbar {
+                    display: none;
+                }
+            }
+
             &__item {
-                overflow: hidden;
-                text-overflow: ellipsis;
-                padding: 0 0.8rem;
+                position: relative;
+                flex: 1 0 auto;
+                width: auto !important;
+                min-inline-size: fit-content;
+                overflow: visible;
+                text-overflow: clip;
+                padding-block: 0;
+                padding-inline: 0.7rem;
+                font-size: 1.3rem;
+                font-weight: 600;
+                color: #c5cedf;
+                transition: color 0.18s ease;
+
+                &:hover:not(.dc-tabs__active) {
+                    color: #ffe270;
+                }
+
+                &:focus-visible {
+                    outline: 2px solid #ffe270;
+                    outline-offset: -2px;
+                }
+            }
+
+            &__active {
+                font-weight: 600;
+                color: #ffffff;
+
+                @include mobile-or-tablet-screen {
+                    &::after {
+                        content: '';
+                        position: absolute;
+                        inset: auto 0 -1px;
+                        border-block-end: 2px solid #f2ca00;
+                    }
+                }
+
+                @media (forced-colors: active) {
+                    &::after {
+                        content: '';
+                        position: absolute;
+                        inset: auto 0 -1px;
+                        border-block-end: 2px solid Highlight;
+                    }
+                }
+            }
+
+            &__active-line {
+                background: linear-gradient(90deg, #ffe270 0%, #f2ca00 60%, #c99700 100%);
+                border-block-end: 2px solid #f2ca00;
+                box-shadow: 0 0 8px rgba(242, 202, 0, 0.45);
             }
         }
     }

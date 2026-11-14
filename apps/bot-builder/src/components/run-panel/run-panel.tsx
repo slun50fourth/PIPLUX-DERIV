@@ -12,11 +12,13 @@ import Summary from '@/components/summary';
 import TradeAnimation from '@/components/trade-animation';
 import Transactions from '@/components/transactions';
 import { DBOT_TABS } from '@/constants/bot-contents';
+import { run_panel as RUN_PANEL_TABS } from '@/constants/run-panel';
 import { popover_zindex } from '@/constants/z-indexes';
 import { useStore } from '@/hooks/useStore';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import ThemedScrollbars from '../shared_ui/themed-scrollbars';
+import BotsPanel from './bots-panel';
 
 type TStatisticsTile = {
     content: React.ElementType | string;
@@ -192,8 +194,21 @@ const DrawerContent = ({ active_index, is_drawer_open, active_tour, setActiveTab
                         <Journal />
                     </PanelErrorBoundary>
                 </div>
+                <div
+                    id='db-run-panel-tab__bots'
+                    label={
+                        <span className='run-panel__bots-tab-label'>
+                            <span className='run-panel__bots-tab-dot' aria-hidden='true' />
+                            <Localize i18n_default_text='Bots' />
+                        </span>
+                    }
+                >
+                    <PanelErrorBoundary>
+                        <BotsPanel is_drawer_open={is_drawer_open} />
+                    </PanelErrorBoundary>
+                </div>
             </Tabs>
-            {((is_drawer_open && active_index !== 2) || active_tour) && (
+            {((is_drawer_open && active_index < RUN_PANEL_TABS.JOURNAL) || active_tour) && (
                 <PanelErrorBoundary>
                     <StatisticsSummary {...props} />
                 </PanelErrorBoundary>
@@ -433,8 +448,8 @@ const RunPanel = observer(() => {
                             'run-panel__container--tour-active': !isMobileView && active_tour,
                         })}
                         contentClassName='run-panel__content'
-                        header={header}
-                        footer={!isMobileView && footer}
+                        header={active_index !== RUN_PANEL_TABS.BOTS ? header : undefined}
+                        footer={!isMobileView && active_index !== RUN_PANEL_TABS.BOTS ? footer : undefined}
                         is_open={is_drawer_open}
                         toggleDrawer={toggleDrawer}
                         width={366}
