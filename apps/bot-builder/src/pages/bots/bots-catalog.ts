@@ -11,7 +11,7 @@ export type TBotMetric = {
     accent?: 'gold' | 'neutral';
 };
 
-export type TRunPanelBot = {
+export type TPipluxBot = {
     id: string;
     name: string;
     badge: string;
@@ -24,8 +24,8 @@ export type TRunPanelBot = {
     featured?: boolean;
 };
 
-/** Curated PIPLUX bots rendered in the RunPanel "Bots" tab, led by Over 1 Under 8 Recovery Over 4. */
-export const RUN_PANEL_BOTS: readonly TRunPanelBot[] = [
+/** Curated PIPLUX bots rendered in the top-level "Bots" tab, led by Over 1 Under 8 Recovery Over 4. */
+export const PIPLUX_BOTS: readonly TPipluxBot[] = [
     {
         id: 'piplux-bot-over-1-under-8-recovery-over-4',
         name: 'Over 1 Under 8 Recovery Over 4',

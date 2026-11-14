@@ -38,6 +38,7 @@ import { LegacyGuide1pxIcon } from '@deriv/quill-icons/Legacy';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import RunPanel from '../../components/run-panel';
+import BotsPage from '../bots';
 import ChartModal from '../chart/chart-modal';
 import Dashboard from '../dashboard';
 import RunStrategy from '../dashboard/run-strategy';
@@ -77,7 +78,7 @@ const AppWrapper = observer(() => {
     const { clear } = summary_card;
     const { DASHBOARD, BOT_BUILDER } = DBOT_TABS;
     const init_render = React.useRef(true);
-    const hash = ['dashboard', 'bot_builder'];
+    const hash = ['dashboard', 'bot_builder', 'bots'];
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
@@ -122,7 +123,8 @@ const AppWrapper = observer(() => {
     const GetHashedValue = (tab: number) => {
         tab_value = location.hash?.split('#')[1];
         if (!tab_value) return tab;
-        return Number(hash.indexOf(String(tab_value)));
+        const resolved = hash.indexOf(String(tab_value));
+        return resolved >= 0 ? resolved : tab;
     };
     const active_hash_tab = GetHashedValue(active_tab);
 
@@ -140,10 +142,10 @@ const AppWrapper = observer(() => {
 
     React.useEffect(() => {
         const el_dashboard = document.getElementById('id-dbot-dashboard');
-        const el_bot_builder = document.getElementById('id-bot-builder');
+        const el_last_tab = document.getElementById('id-dbot-bots') || document.getElementById('id-bot-builder');
 
         let observer_dashboard: IntersectionObserver | null = null;
-        let observer_bot_builder: IntersectionObserver | null = null;
+        let observer_last_tab: IntersectionObserver | null = null;
 
         if (typeof window !== 'undefined' && window.IntersectionObserver) {
             if (el_dashboard) {
@@ -156,20 +158,20 @@ const AppWrapper = observer(() => {
                 observer_dashboard.observe(el_dashboard);
             }
 
-            if (el_bot_builder) {
-                observer_bot_builder = new window.IntersectionObserver(
+            if (el_last_tab) {
+                observer_last_tab = new window.IntersectionObserver(
                     ([entry]) => {
                         setRightTabShadow(!entry.isIntersecting);
                     },
                     { root: null, threshold: 0.5 }
                 );
-                observer_bot_builder.observe(el_bot_builder);
+                observer_last_tab.observe(el_last_tab);
             }
         }
 
         return () => {
             observer_dashboard?.disconnect();
-            observer_bot_builder?.disconnect();
+            observer_last_tab?.disconnect();
         };
     }, []);
 
@@ -415,6 +417,34 @@ const AppWrapper = observer(() => {
                                 }
                                 id='id-bot-builder'
                             />
+                            <div
+                                label={
+                                    <>
+                                        <svg
+                                            width='24'
+                                            height='24'
+                                            viewBox='0 0 24 24'
+                                            fill='none'
+                                            stroke='currentColor'
+                                            strokeWidth='1.75'
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                            aria-hidden='true'
+                                        >
+                                            <rect x='4' y='7' width='16' height='12' rx='3' />
+                                            <path d='M12 3v4' />
+                                            <circle cx='12' cy='2.5' r='1' fill='#f2ca00' stroke='#f2ca00' />
+                                            <circle cx='9' cy='12.5' r='1.2' fill='currentColor' />
+                                            <circle cx='15' cy='12.5' r='1.2' fill='currentColor' />
+                                            <path d='M9 16h6' />
+                                        </svg>
+                                        <Localize i18n_default_text='Bots' />
+                                    </>
+                                }
+                                id='id-dbot-bots'
+                            >
+                                <BotsPage />
+                            </div>
                         </Tabs>
                         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}{' '}
                     </div>

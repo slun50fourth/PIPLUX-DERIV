@@ -22,7 +22,7 @@ import './bot-builder.scss';
 
 // Trailing slash matters: the app's router basename is "/deriv-bot" and only has an index route.
 // Bump the query string to bust caches after rebuilding apps/bot-builder.
-const BOT_BUILDER_URL = '/deriv-bot/?v=8';
+const BOT_BUILDER_URL = '/deriv-bot/?v=9';
 
 // ---------------------------------------------------------------------------
 // BotBuilderBridge component — the actual iframe mount

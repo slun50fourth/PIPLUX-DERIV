@@ -12,13 +12,11 @@ import Summary from '@/components/summary';
 import TradeAnimation from '@/components/trade-animation';
 import Transactions from '@/components/transactions';
 import { DBOT_TABS } from '@/constants/bot-contents';
-import { run_panel as RUN_PANEL_TABS } from '@/constants/run-panel';
 import { popover_zindex } from '@/constants/z-indexes';
 import { useStore } from '@/hooks/useStore';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 import ThemedScrollbars from '../shared_ui/themed-scrollbars';
-import BotsPanel from './bots-panel';
 
 type TStatisticsTile = {
     content: React.ElementType | string;
@@ -194,21 +192,8 @@ const DrawerContent = ({ active_index, is_drawer_open, active_tour, setActiveTab
                         <Journal />
                     </PanelErrorBoundary>
                 </div>
-                <div
-                    id='db-run-panel-tab__bots'
-                    label={
-                        <span className='run-panel__bots-tab-label'>
-                            <span className='run-panel__bots-tab-dot' aria-hidden='true' />
-                            <Localize i18n_default_text='Bots' />
-                        </span>
-                    }
-                >
-                    <PanelErrorBoundary>
-                        <BotsPanel is_drawer_open={is_drawer_open} />
-                    </PanelErrorBoundary>
-                </div>
             </Tabs>
-            {((is_drawer_open && active_index < RUN_PANEL_TABS.JOURNAL) || active_tour) && (
+            {((is_drawer_open && active_index !== 2) || active_tour) && (
                 <PanelErrorBoundary>
                     <StatisticsSummary {...props} />
                 </PanelErrorBoundary>
@@ -391,7 +376,7 @@ const RunPanel = observer(() => {
     const { statistics } = transactions;
     const { active_tour, active_tab } = dashboard;
     const { total_payout, total_profit, total_stake, won_contracts, lost_contracts, number_of_runs } = statistics;
-    const { BOT_BUILDER, CHART } = DBOT_TABS;
+    const { BOT_BUILDER, BOTS } = DBOT_TABS;
 
     React.useEffect(() => {
         onMount();
@@ -439,7 +424,7 @@ const RunPanel = observer(() => {
 
     return (
         <>
-            {(isMobileView || show_run_panel || is_drawer_open) && (
+            {active_tab !== BOTS && (isMobileView || show_run_panel || is_drawer_open) && (
                 <div className={isMobileView && is_drawer_open ? 'run-panel__container--mobile' : 'run-panel'}>
                     <Drawer
                         anchor='right'
@@ -448,8 +433,8 @@ const RunPanel = observer(() => {
                             'run-panel__container--tour-active': !isMobileView && active_tour,
                         })}
                         contentClassName='run-panel__content'
-                        header={active_index !== RUN_PANEL_TABS.BOTS ? header : undefined}
-                        footer={!isMobileView && active_index !== RUN_PANEL_TABS.BOTS ? footer : undefined}
+                        header={header}
+                        footer={!isMobileView && footer}
                         is_open={is_drawer_open}
                         toggleDrawer={toggleDrawer}
                         width={366}
@@ -459,7 +444,7 @@ const RunPanel = observer(() => {
                     </Drawer>
                 </div>
             )}
-            <MobileBottomDock />
+            {active_tab !== BOTS && <MobileBottomDock />}
 
             <StatisticsInfoModal
                 is_mobile={isMobileView}
